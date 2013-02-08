@@ -269,7 +269,10 @@ public:
     void swap( cow_ptr & other ) noexcept;
 
     /// Copy assignment. Never throws!
-    cow_ptr & operator=( cow_ptr other ) noexcept;
+    cow_ptr & operator=( const cow_ptr & other ) noexcept;
+
+    /// Move assignment.
+    cow_ptr & operator=( cow_ptr && other ) noexcept;
 
     /////////////////////////////////
     // access to object pointed to //
@@ -533,7 +536,16 @@ void cow_ptr<T>::swap( cow_ptr & other ) noexcept
 
 
 template <typename T>
-cow_ptr<T> & cow_ptr<T>::operator=( cow_ptr other ) noexcept
+cow_ptr<T> & cow_ptr<T>::operator=( const cow_ptr & other ) noexcept
+{
+    cow_ptr<T> tmp(other);
+    swap( tmp );
+    return *this;
+}
+
+
+template <typename T>
+cow_ptr<T> & cow_ptr<T>::operator=( cow_ptr && other ) noexcept
 {
     swap( other );
     return *this;
