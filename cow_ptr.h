@@ -2,6 +2,7 @@
 
     This file works with the following compilers
       - gcc 4.6.3 with the command line option -std=c++0x.
+      - probably newer versions of gcc.
 
   @author Ralph Tandetzky
   @date 04 Feb 2013 */
