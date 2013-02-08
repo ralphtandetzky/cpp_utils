@@ -249,7 +249,7 @@ public:
     template <typename Y
             , typename D = default_deleter
             , typename C = default_cloner>
-    cow_ptr( Y * p
+    explicit cow_ptr( Y * p
           , D deleter = default_deleter()
           , C cloner = default_cloner() );
 
