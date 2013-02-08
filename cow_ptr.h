@@ -37,6 +37,7 @@ struct default_cloner
     template <typename T>
     T * operator()( const T * p ) const
     {
+        assert( typeid( *p ) == typeid( const T& ) );
         return new T(*p);
     }
 };
