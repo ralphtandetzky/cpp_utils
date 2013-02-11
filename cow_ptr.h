@@ -236,7 +236,11 @@ public:
         as an argument to a copy of @c cloner and so forth. It is the
         responsibility of @c cloner to create a new copy of @c *p, whenever
         copying is necessary. Both @c deleter and @c cloner must be
-        @c MoveConstructible and @c CopyConstructible. */
+        @c MoveConstructible and @c CopyConstructible.
+
+      @pre If you use the @c default_cloner, make sure that @c Y is the dynamic
+        type of @c *p. Because the @c default_cloner asserts this. This is
+        necessary in order to avoid slicing. */
     template <typename Y
             , typename D = std::default_delete<Y>
             , typename C = default_cloner>
