@@ -133,11 +133,11 @@ struct default_cloner
             cow_ptr<T> p( new T );
             T * raw = p.get();
             cow_ptr<T> q( p );
-            raw->modify(); // modifies the guts of both p and q
+            raw->mutate(); // modifies the guts of both p and q
           @endcode
         would break the copy-on-write semantics of the cow pointer.
     In order to make the user interface of the class easy to use correctly and
-    hard to use incorrectly, a member template function @c apply() is given.
+    hard to use incorrectly, a member template function @c modify() is given.
     This function takes a functor as argument which takes a @c T* argument.
     It makes an internal copy of the object pointed to, if the reference count
     is at least 2 and then it calls the functor with the stored @c T* pointer.
@@ -145,16 +145,16 @@ struct default_cloner
       @code
         cow_ptr<T> p( new T );
         cow_ptr<T> q( p );
-        p.apply( [](T*raw){ raw->modify(); } ); // performes deep copy first.
+        p.modify( [](T*raw){ raw->mutate(); } ); // performes deep copy first.
       @endcode
     It is still possible to let pointers escape and thereby break the
     copy-on-write semantics as mentioned above, but it is harder. Using the
-    macro @c COW_APPLY the last line can be simplified to
+    macro @c COW_MODIFY the last line can be simplified to
       @code
-        COW_APPLY(p) { p->modify(); };
+        COW_MODIFY(p) { p->mutate(); };
       @endcode
     Unfortunately the semicolon at the end of the line is necessary. For
-    constant operations there's an equivalent macro @c COW_APPLY_CONST.
+    constant operations there's an equivalent macro @c COW_read.
 
     Similar to @c std::make_shared and the soon coming @c std::make_unique
     there is an equivalent @c make_cow which makes code faster, more
@@ -278,17 +278,11 @@ public:
         passing a functor that does nothing. However, this should normally
         not be necessary. */
     template <typename Func>
-    void apply( Func f );
+    void modify( Func f );
 
-    /// Same as @c apply_const().
-    /** Prefer to use @c apply_const() wherever possible to avoid calling the
-        non-const overload by accident and to make your intent clearer. */
+    /// The expression @c p.read(f) is equivalent to @c f(p.get()).
     template <typename Func>
-    void apply( Func f ) const; // noexcept( noexcept( f(get()) ) );
-
-    /// The expression @c p.apply_const(f) is equivalent to @c f(p.get()).
-    template <typename Func>
-    void apply_const( Func f ) const; // noexcept( noexcept( f(get()) ) );
+    void read( Func f ) const; // noexcept( noexcept( f(get()) ) );
 
     /////////////////////
     // other operators //
@@ -427,36 +421,34 @@ cow_ptr<T> make_cow( Args&&...args );
 /// cow pointer.
 /** Instead of
       @code
-        ptr.apply( [&](ClassName * ptr) { ... do something with ptr ... } );
+        ptr.modify( [&](ClassName * ptr) { ... do something with ptr ... } );
       @endcode
     you can write
       @code
-        COW_APPLY(ptr) { ... do something with ptr ... };
+        COW_MODIFY(ptr) { ... do something with ptr ... };
       @endcode
     and thereby avoiding to write the unnecessary lambda hullabaloo which
-    includes repeating the typename of the wrapped pointer. This also works
-    properly for constant cow pointers. In this case the const member function
-    @c apply() is called.
+    includes repeating the typename of the wrapped pointer.
   @note Do not forget the semicolon at the end of the line. The template
     argument must be an identifier. */
-#define COW_APPLY(ptr) ptr &= [&](decltype(ptr.operator->()) ptr)
+#define COW_MODIFY(ptr) ptr &= [&](decltype(ptr.operator->()) ptr)
 //                         ^^ this operator is customized for this purpose
 
-/// The const version of @c COW_APPLY.
-/** It is guaranteed that no internal copy is made, since the const version
-    of the @c apply() member function is called. */
-#define COW_APPLY_CONST(ptr) make_const_ref(ptr) &= [&](decltype(ptr.get()) ptr)
-//                           ^^ this template function is defined later.
+/// The const version of @c COW_MODIFY.
+/** It is guaranteed that no internal copy is made, since the @c read()
+    member function is called. */
+#define COW_READ(ptr) make_const_ref(ptr) &= [&](decltype(ptr.get()) ptr)
+//                    ^^ this template function is defined later.
 
-// Helper operator for the implementation of COW_APPLY
+// Helper operator for the implementation of COW_MODIFY
 template <typename T, typename Func>
 void operator&=( cow_ptr<T> & p, Func && f );
 
-// Helper operator for the implementation of COW_APPLY
+// Helper operator for the implementation of COW_READ
 template <typename T, typename Func>
 void operator&=( const cow_ptr<T> & p, Func && f );
 
-// Helper template function for the implementation of COW_APPLY_CONST
+// Helper template function for the implementation of COW_READ
 template <typename T>
 const T & make_const_ref( T & ref );
 
@@ -504,7 +496,7 @@ cow_ptr<T>::cow_ptr( Y * p, D deleter, C cloner )
     : px(p)
     , pn(new concrete_counter<Y,D,C>( p,std::move(deleter),std::move(cloner) ) )
 {
-    static_assert( noexcept(deleter(p)), "The deleter must not throw." );
+//    static_assert( noexcept(deleter(p)), "The deleter must not throw." );
     pn->acquire();
 }
 
@@ -551,7 +543,7 @@ const T * cow_ptr<T>::get() const noexcept
 
 template <typename T>
 template <typename Func>
-void cow_ptr<T>::apply( Func f )
+void cow_ptr<T>::modify( Func f )
 {
     moo();
     f( px );
@@ -560,15 +552,7 @@ void cow_ptr<T>::apply( Func f )
 
 template <typename T>
 template <typename Func>
-void cow_ptr<T>::apply( Func f ) const // noexcept( noexcept( f(get()) ) )
-{
-    apply_const( std::forward<Func>(f) );
-}
-
-
-template <typename T>
-template <typename Func>
-void cow_ptr<T>::apply_const( Func f ) const // noexcept( noexcept( f(get()) ) )
+void cow_ptr<T>::read( Func f ) const // noexcept( noexcept( f(get()) ) )
 {
     f( get() );
 }
@@ -771,14 +755,14 @@ cow_ptr<T> make_cow( Args&&...args )
 template <typename T, typename Func>
 void operator&=( cow_ptr<T> & p, Func && f )
 {
-    p.apply( std::forward<Func>(f) );
+    p.modify( std::forward<Func>(f) );
 }
 
 
 template <typename T, typename Func>
 void operator&=( const cow_ptr<T> & p, Func && f )
 {
-    p.apply( std::forward<Func>(f) );
+    p.read( std::forward<Func>(f) );
 }
 
 
