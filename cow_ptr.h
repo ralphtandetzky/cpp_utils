@@ -16,20 +16,10 @@
 
 #include <atomic>
 #include <cassert>
+#include <memory> // std::default_delete
 
 namespace cow
 {
-
-/// Functor which deletes pointers.
-struct default_deleter
-{
-    template <typename T>
-    void operator()( T * p ) const noexcept
-    {
-        delete p;
-    }
-};
-
 
 /// Functor which creates a new copy of an object pointed to.
 struct default_cloner
@@ -248,10 +238,10 @@ public:
         copying is necessary. Both @c deleter and @c cloner must be
         @c MoveConstructible and @c CopyConstructible. */
     template <typename Y
-            , typename D = default_deleter
+            , typename D = std::default_delete<Y>
             , typename C = default_cloner>
     explicit cow_ptr( Y * p
-          , D deleter = default_deleter()
+          , D deleter = std::default_delete<Y>()
           , C cloner = default_cloner() );
 
     ////////////////
