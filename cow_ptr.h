@@ -460,6 +460,50 @@ const T & make_const_ref( T & ref );
 template <typename T>
 void swap( cow_ptr<T> & lhs, cow_ptr<T> & rhs ) noexcept;
 
+//////////////////////////
+// comparison operators //
+//////////////////////////
+
+/// Returns true iff the adresses of the pointed-to objects compare equal.
+template <typename T>
+bool operator==( const cow_ptr<T> & lhs, const cow_ptr<T> & rhs );
+
+/// Returns false iff the adresses of the pointed-to objects compare equal.
+template <typename T>
+bool operator!=( const cow_ptr<T> & lhs, const cow_ptr<T> & rhs );
+
+/// Compares the adresses of the pointed-to objects.
+template <typename T>
+bool operator<( const cow_ptr<T> & lhs, const cow_ptr<T> & rhs );
+
+/// Compares the adresses of the pointed-to objects.
+template <typename T>
+bool operator>( const cow_ptr<T> & lhs, const cow_ptr<T> & rhs );
+
+/// Compares the adresses of the pointed-to objects.
+template <typename T>
+bool operator<=( const cow_ptr<T> & lhs, const cow_ptr<T> & rhs );
+
+/// Compares the adresses of the pointed-to objects.
+template <typename T>
+bool operator>=( const cow_ptr<T> & lhs, const cow_ptr<T> & rhs );
+
+/// Tells, if the pointer is null.
+template <typename T>
+bool operator==( const cow_ptr<T> & p, std::nullptr_t );
+
+/// Tells, if the pointer is null.
+template <typename T>
+bool operator==( std::nullptr_t, const cow_ptr<T> & p );
+
+/// Tells, if the pointer is not null.
+template <typename T>
+bool operator!=( const cow_ptr<T> & p, std::nullptr_t );
+
+/// Tells, if the pointer is not null.
+template <typename T>
+bool operator!=( std::nullptr_t, const cow_ptr<T> & p );
+
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                                                                           *
@@ -781,6 +825,76 @@ template <typename T>
 void swap( cow_ptr<T> & lhs, cow_ptr<T> & rhs ) noexcept
 {
     lhs.swap( rhs );
+}
+
+
+template <typename T>
+bool operator==( const cow_ptr<T> & lhs, const cow_ptr<T> & rhs )
+{
+    return lhs.get() == rhs.get();
+}
+
+
+template <typename T>
+bool operator!=( const cow_ptr<T> & lhs, const cow_ptr<T> & rhs )
+{
+    return lhs.get() != rhs.get();
+}
+
+
+template <typename T>
+bool operator<( const cow_ptr<T> & lhs, const cow_ptr<T> & rhs )
+{
+    return lhs.get() < rhs.get();
+}
+
+
+template <typename T>
+bool operator>( const cow_ptr<T> & lhs, const cow_ptr<T> & rhs )
+{
+    return lhs.get() > rhs.get();
+}
+
+
+template <typename T>
+bool operator<=( const cow_ptr<T> & lhs, const cow_ptr<T> & rhs )
+{
+    return lhs.get() <= rhs.get();
+}
+
+
+template <typename T>
+bool operator>=( const cow_ptr<T> & lhs, const cow_ptr<T> & rhs )
+{
+    return lhs.get() >= rhs.get();
+}
+
+
+template <typename T>
+bool operator==( const cow_ptr<T> & p, std::nullptr_t )
+{
+    return p.get() == nullptr;
+}
+
+
+template <typename T>
+bool operator==( std::nullptr_t, const cow_ptr<T> & p )
+{
+    return p.get() == nullptr;
+}
+
+
+template <typename T>
+bool operator!=( const cow_ptr<T> & p, std::nullptr_t )
+{
+    return p.get() != nullptr;
+}
+
+
+template <typename T>
+bool operator!=( std::nullptr_t, const cow_ptr<T> & p )
+{
+    return p.get() != nullptr;
 }
 
 } // namespace cow
