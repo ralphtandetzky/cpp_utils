@@ -301,7 +301,7 @@ public:
     const T * operator->() const noexcept;
 
     /// Cast for use in conditional statements
-    operator bool() const noexcept;
+    explicit operator bool() const noexcept;
 
     //////////////////////
     // helper functions //
