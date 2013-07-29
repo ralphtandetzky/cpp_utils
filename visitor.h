@@ -11,7 +11,7 @@
 template <typename ...T>
 struct Visitor : virtual Visitor<T>...
 {
-  typedef Visitor<const T...> ConstVisitor;
+	typedef Visitor<const T...> ConstVisitor;
 
 	struct VisitableInterface
 	{
@@ -34,7 +34,7 @@ struct Visitor : virtual Visitor<T>...
 			assert( typeid( *this ) == typeid( const S ) );
 			v.visit( static_cast<const S&>(*this) );			
 		}
-    };
+	};
 };
 
 template <typename T>
