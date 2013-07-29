@@ -10,10 +10,22 @@ typedef Visitor<Client2a, Client2b> Client2Visitor;
 struct Client2a : Client2, Client2Visitor::Visitable<Clien2a> { };
 struct Client2b : Client2, Client2Visitor::Visitable<Clien2b> { };
 
-struct AllClientsVisitor : BaseClientVisitor, Client2Visitor
+struct AllClientsVisitor 
+	: BaseClientVisitor
+	, Client2Visitor
 {
 	virtual void visit( Client2 & t ) final
 	{
 		t.accept( static_cast<Client2Visitor&>(*this) );
+	}
+};
+
+struct ConstAllClientsVisitor 
+	: BaseClientVisitor::ConstVisitor
+	, Client2Visitor::ConstVisitor
+{
+	virtual void visit( const Client2 & t ) final
+	{
+		t.accept( static_cast<Client2Visitor::ConstVisitor&>(*this) );
 	}
 };
