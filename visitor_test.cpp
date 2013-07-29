@@ -12,7 +12,7 @@ struct Client2b : Client2, Client2Visitor::Visitable<Clien2b> { };
 
 struct AllClientsVisitor : BaseClientVisitor, Client2Visitor
 {
-	virtual void visit( Client2 & t )
+	virtual void visit( Client2 & t ) final
 	{
 		t.accept( static_cast<Client2Visitor&>(*this) );
 	}
