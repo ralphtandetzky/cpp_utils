@@ -7,6 +7,8 @@
 #include <typeinfo>
 #include <cassert>
 
+#include <utility>
+
 /**********************************
  **  THE SIMPLE VISITOR PATTERN  **
  **********************************/
@@ -16,8 +18,25 @@ struct Visitor : virtual Visitor<T>...
 {
 	typedef Visitor<const T...> ConstVisitor;
 
-    template <template<typename> class Policy>
-    struct Impl : Visitor, Visitor<T>::template Impl<Policy>... {};
+    template <typename F>
+    struct Impl : Visitor, Visitor<T>::template Impl<F>...
+    {
+        template <typename...Args>
+        explicit Impl( Args&&...args ) : f(std::forward<Args>(args)...) {}
+        Impl( Impl & other ) : Impl( const_cast<const Impl&>(other) ) {}
+        Impl( Impl && ) = default;
+        Impl( const Impl & ) = default;
+        Impl( const Impl && other ) : Impl( static_cast<const Impl&>(other) ) {}
+    private:
+        F & getFunctor() override { return f; }
+        F f;
+    };
+
+    template <typename F>
+    static Impl<F> makeImpl( F f )
+    {
+        return Impl<F>( std::move(f) );
+    }
 
     struct VisitableInterface
     {
@@ -51,13 +70,13 @@ struct Visitor<T>
 	virtual ~Visitor() {}
 	virtual void visit( T & t ) = 0;
 
-    template <template<typename> class Policy>
+protected:
+    template <typename F>
     struct Impl : virtual Visitor<T>
     {
-        void visit( T & t ) override
-        {
-            Policy<T>::f( t );
-        }
+        void visit( T & t ) override { getFunctor()( t ); }
+    private:
+        virtual F & getFunctor() = 0;
     };
 };
 
@@ -76,23 +95,38 @@ struct AcyclicVisitor : virtual AcyclicVisitor<T>...
 {
     typedef AcyclicVisitor<const T...> ConstVisitor;
 
-    template <template<typename> class Policy>
-    struct Impl : AcyclicVisitor<T>::template Impl<Policy>... {};
+    template <typename F>
+    struct Impl: AcyclicVisitor<T>::template Impl<F>...
+    {
+        template <typename...Args>
+        Impl( Args&&...args ) : f(std::forward<Args>(args)...) {}
+        Impl( Impl & other ) : Impl( const_cast<const Impl&>(other) ) {}
+        Impl( Impl && ) = default;
+        Impl( const Impl & ) = default;
+        Impl( const Impl && other ) : Impl( static_cast<const Impl&>(other) ) {}
+    private:
+        F & getFunctor() override { return f; }
+        F f;
+    };
+
+    template <typename F>
+    static Impl<F> makeImpl( F f )
+    {
+        return Impl<F>( std::move(f) );
+    }
 };
 
 template <typename T>
 struct AcyclicVisitor<T> : virtual AcyclicVisitorInterface
 {
-    typedef AcyclicVisitor<const T> ConstVisitor;
     virtual void visit( T & ) = 0;
 
-    template <template<typename> class Policy>
+    template <typename F>
     struct Impl : AcyclicVisitor
     {
-        void visit( T & t ) override
-        {
-            Policy<T>::f(t);
-        }
+        void visit( T & t ) override { getFunctor()(t); }
+    private:
+        virtual F & getFunctor() = 0;
     };
 };
 
@@ -124,3 +158,4 @@ struct AcyclicVisitable : virtual AcyclicVisitableInterface
 		return true;
 	}
 };
+
