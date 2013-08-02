@@ -16,6 +16,9 @@ struct Visitor : virtual Visitor<T>...
 {
 	typedef Visitor<const T...> ConstVisitor;
 
+    template <template<typename> class Policy>
+    struct Impl : Visitor, Visitor<T>::template Impl<Policy>... {};
+
     struct VisitableInterface
     {
         virtual ~VisitableInterface() {}
@@ -29,13 +32,15 @@ struct Visitor : virtual Visitor<T>...
         virtual void accept( Visitor & v )
         {
             assert( typeid( *this ) == typeid( S ) );
-            static_cast<Visitor<S>&>(v).visit( static_cast<S&>(*this) );
+            static_cast<Visitor<S>&>(v).visit(
+                static_cast<S&>(*this) );
         }
 
         virtual void accept( ConstVisitor & v ) const
         {
             assert( typeid( *this ) == typeid( const S ) );
-            static_cast<Visitor<const S>&>(v).visit( static_cast<const S&>(*this) );
+            static_cast<Visitor<const S>&>(v).visit(
+                static_cast<const S&>(*this) );
         }
     };
 };
@@ -45,6 +50,15 @@ struct Visitor<T>
 {
 	virtual ~Visitor() {}
 	virtual void visit( T & t ) = 0;
+
+    template <template<typename> class Policy>
+    struct Impl : virtual Visitor<T>
+    {
+        void visit( T & t ) override
+        {
+            Policy<T>::f( t );
+        }
+    };
 };
 
 
@@ -52,48 +66,61 @@ struct Visitor<T>
  **  THE ACYCLIC VISITOR PATTERN  **
  ***********************************/
 
-struct AcyclicVisitor
+struct AcyclicVisitorInterface
 {
-	virtual ~AcyclicVisitor() {}
+    virtual ~AcyclicVisitorInterface() {}
 };
 
 template <typename ...T>
-struct AcyclicVisitorImpl : virtual AcyclicVisitorImpl<T>...
+struct AcyclicVisitor : virtual AcyclicVisitor<T>...
 {
-	typedef AcyclicVisitorImpl<const T...> ConstVisitor;
+    typedef AcyclicVisitor<const T...> ConstVisitor;
+
+    template <template<typename> class Policy>
+    struct Impl : AcyclicVisitor<T>::template Impl<Policy>... {};
 };
 
 template <typename T>
-struct AcyclicVisitorImpl<T> : virtual AcyclicVisitor
+struct AcyclicVisitor<T> : virtual AcyclicVisitorInterface
 {
-	virtual void visit( T & ) = 0;
+    typedef AcyclicVisitor<const T> ConstVisitor;
+    virtual void visit( T & ) = 0;
+
+    template <template<typename> class Policy>
+    struct Impl : AcyclicVisitor
+    {
+        void visit( T & t ) override
+        {
+            Policy<T>::f(t);
+        }
+    };
 };
 
 struct AcyclicVisitableInterface
 {
     virtual ~AcyclicVisitableInterface() {}
-	virtual bool tryAccept     ( AcyclicVisitor & v )       = 0;
-	virtual bool tryAcceptConst( AcyclicVisitor & v ) const = 0;
+    virtual bool tryAccept     ( AcyclicVisitorInterface & v )       = 0;
+    virtual bool tryAcceptConst( AcyclicVisitorInterface & v ) const = 0;
 };
 
 template <typename S>
 struct AcyclicVisitable : virtual AcyclicVisitableInterface
 {
-	virtual bool tryAccept( AcyclicVisitor & v )
+    virtual bool tryAccept( AcyclicVisitorInterface & v )
 	{
-		const auto v_ = dynamic_cast<AcyclicVisitorImpl<S>*>(v);
-		if ( !v_ )
+        const auto pv = dynamic_cast<AcyclicVisitor<S>*>(&v);
+        if ( !pv )
 			return false;
-		v_.visit( static_cast<S&>(*this) );
+        pv->visit( static_cast<S&>(*this) );
 		return true;
 	}
 
-	virtual bool tryAcceptConst( AcyclicVisitor & v ) const
+    virtual bool tryAcceptConst( AcyclicVisitorInterface & v ) const
 	{
-		const auto v_ = dynamic_cast<AcyclicVisitorImpl<const S>*>(v);
-		if ( !v_ )
+        const auto pv = dynamic_cast<AcyclicVisitor<const S>*>(&v);
+        if ( !pv )
 			return false;
-		v_->visit( static_cast<const S&>(*this) );
+        pv->visit( static_cast<const S&>(*this) );
 		return true;
 	}
 };
