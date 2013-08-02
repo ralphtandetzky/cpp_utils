@@ -4,37 +4,40 @@
   @author Ralph Tandetzky
   @date 29 Jul 2013 */
 
-//////////////////////////////////
-//  THE SIMPLE VISITOR PATTERN  //
-//////////////////////////////////
+#include <typeinfo>
+#include <cassert>
+
+/**********************************
+ **  THE SIMPLE VISITOR PATTERN  **
+ **********************************/
 
 template <typename ...T>
 struct Visitor : virtual Visitor<T>...
 {
 	typedef Visitor<const T...> ConstVisitor;
 
-	struct VisitableInterface
-	{
-		virtual ~VisitableInterface {}
-		virtual void accept( Visitor & v ) = 0;
-		virtual void accept( ConstVisitor & v ) const = 0;
-	};
+    struct VisitableInterface
+    {
+        virtual ~VisitableInterface() {}
+        virtual void accept( Visitor & v ) = 0;
+        virtual void accept( ConstVisitor & v ) const = 0;
+    };
 
 	template <typename S>
-	struct Visitable : VisitableInterface
-	{
-		virtual void accept( Visitor & v )
-		{
-			assert( typeid( *this ) == typeid( S ) );
-			v.visit( static_cast<S&>(*this) );
-		}
+    struct Visitable : VisitableInterface
+    {
+        virtual void accept( Visitor & v )
+        {
+            assert( typeid( *this ) == typeid( S ) );
+            static_cast<Visitor<S>&>(v).visit( static_cast<S&>(*this) );
+        }
 
-		virtual void accept( ConstVisitor & v ) const
-		{
-			assert( typeid( *this ) == typeid( const S ) );
-			v.visit( static_cast<const S&>(*this) );			
-		}
-	};
+        virtual void accept( ConstVisitor & v ) const
+        {
+            assert( typeid( *this ) == typeid( const S ) );
+            static_cast<Visitor<const S>&>(v).visit( static_cast<const S&>(*this) );
+        }
+    };
 };
 
 template <typename T>
@@ -45,9 +48,9 @@ struct Visitor<T>
 };
 
 
-///////////////////////////////////
-//  THE ACYCLIC VISITOR PATTERN  //
-///////////////////////////////////
+/***********************************
+ **  THE ACYCLIC VISITOR PATTERN  **
+ ***********************************/
 
 struct AcyclicVisitor
 {
@@ -68,7 +71,7 @@ struct AcyclicVisitorImpl<T> : virtual AcyclicVisitor
 
 struct AcyclicVisitableInterface
 {
-	virtual ~VisitableInterface {}
+    virtual ~AcyclicVisitableInterface() {}
 	virtual bool tryAccept     ( AcyclicVisitor & v )       = 0;
 	virtual bool tryAcceptConst( AcyclicVisitor & v ) const = 0;
 };

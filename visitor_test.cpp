@@ -1,31 +1,37 @@
-struct Client1; 
+#include "visitor.h"
+#include <iostream>
+#include <memory>
+#include <vector>
+
+struct Client1;
 struct Client2;
-typedef Visitor<Client1, Client2> BaseClientVisitor;
-struct Client1 : BaseClientVisitor::Visitable<Client1> { };
-struct Client2 : BaseClientVisitor::Visitable<Client2> { };
+struct Client3;
+typedef Visitor<Client1, Client2, Client3> ClientVisitor;
+typedef ClientVisitor::ConstVisitor ConstClientVisitor;
+typedef ClientVisitor::VisitableInterface Client;
+struct Client1 : ClientVisitor::Visitable<Client1> { };
+struct Client2 : ClientVisitor::Visitable<Client2> { };
+struct Client3 : ClientVisitor::Visitable<Client3> { };
 
-struct Client2a;
-struct Client2b;
-typedef Visitor<Client2a, Client2b> Client2Visitor;
-struct Client2a : Client2, Client2Visitor::Visitable<Clien2a> { };
-struct Client2b : Client2, Client2Visitor::Visitable<Clien2b> { };
-
-struct AllClientsVisitor 
-	: BaseClientVisitor
-	, Client2Visitor
+struct PrintTypeVisitor : ConstClientVisitor
 {
-	virtual void visit( Client2 & t ) final
-	{
-		t.accept( static_cast<Client2Visitor&>(*this) );
-	}
+    virtual void visit( const Client1 & t ) { std::cout << "Client1" << std::endl; }
+    virtual void visit( const Client2 & t ) { std::cout << "Client2" << std::endl; }
+    virtual void visit( const Client3 & t ) { std::cout << "Client3" << std::endl; }
 };
 
-struct ConstAllClientsVisitor 
-	: BaseClientVisitor::ConstVisitor
-	, Client2Visitor::ConstVisitor
+void printType( const Client & c )
 {
-	virtual void visit( const Client2 & t ) final
-	{
-		t.accept( static_cast<Client2Visitor::ConstVisitor&>(*this) );
-	}
-};
+    PrintTypeVisitor v;
+    c.accept(v);
+}
+
+int main()
+{
+    std::vector<std::unique_ptr<Client>> v;
+    v.emplace_back ( new Client1  );
+    v.emplace_back ( new Client2 );
+    v.emplace_back ( new Client3 );
+    for ( const auto & x : v)
+        printType( *x );
+}
