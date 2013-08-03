@@ -8,6 +8,7 @@
 #include <cassert>
 
 #include <utility>
+#include <memory>
 
 /**********************************
  **  THE SIMPLE VISITOR PATTERN  **
@@ -122,7 +123,7 @@ struct AcyclicVisitor<T> : virtual AcyclicVisitorInterface
     virtual void visit( T & ) = 0;
 
     template <typename F>
-    struct Impl : AcyclicVisitor
+    struct Impl : virtual AcyclicVisitor
     {
         void visit( T & t ) override { getFunctor()(t); }
     private:
@@ -143,19 +144,88 @@ struct AcyclicVisitable : virtual AcyclicVisitableInterface
     virtual bool tryAccept( AcyclicVisitorInterface & v )
 	{
         const auto pv = dynamic_cast<AcyclicVisitor<S>*>(&v);
-        if ( !pv )
-			return false;
-        pv->visit( static_cast<S&>(*this) );
-		return true;
-	}
+        if ( pv )
+        {
+            pv->visit( static_cast<S&>(*this) );
+            return true;
+        }
+        return false;
+    }
 
     virtual bool tryAcceptConst( AcyclicVisitorInterface & v ) const
 	{
         const auto pv = dynamic_cast<AcyclicVisitor<const S>*>(&v);
-        if ( !pv )
-			return false;
-        pv->visit( static_cast<const S&>(*this) );
-		return true;
+        if ( pv )
+        {
+            pv->visit( static_cast<const S&>(*this) );
+            return true;
+        }
+        return false;
 	}
 };
 
+
+/***********************
+ **  GENERIC CLONING  **
+ ***********************/
+
+template <typename Base>
+struct Cloner
+{
+    template <typename T>
+    void operator()( const T & t )
+    { copy = std::unique_ptr<Base>( new T(t) ); }
+
+    std::unique_ptr<Base> copy;
+};
+
+template <typename V, typename Base = typename V::VisitableInterface>
+std::unique_ptr<Base> clone( const typename V::VisitableInterface & client )
+{
+    Cloner<Base> cloner;
+    typename V::ConstVisitor::template Impl<Cloner<Base>&> v( cloner );
+    client.accept( v );
+    return std::move(cloner.copy);
+}
+
+template <typename V, typename Base>
+std::unique_ptr<Base> clone( const AcyclicVisitableInterface & client )
+{
+    Cloner<Base> cloner;
+    typename V::ConstVisitor::template Impl<Cloner<Base>&> v( cloner );
+    client.tryAcceptConst( v );
+    return std::move(cloner.copy);
+}
+
+
+/*************************
+ **  GENERIC STREAMING  **
+ *************************/
+
+template <typename OutputStream>
+struct Streamer
+{
+    Streamer( OutputStream & os ) : os(os) {}
+
+    template <typename T>
+    void operator()( const T & t ) { os << t; }
+
+private:
+    OutputStream & os;
+};
+
+template <typename V, typename OutputStream>
+OutputStream & print( OutputStream & os, const typename V::VisitableInterface & client )
+{
+    auto v = V::ConstVisitor::makeImpl( Streamer<OutputStream>(os) );
+    client.accept( v );
+    return os;
+}
+
+template <typename V, typename OutputStream>
+OutputStream & print( OutputStream & os, const AcyclicVisitableInterface & client )
+{
+    auto v = V::ConstVisitor::makeImpl( Streamer<OutputStream>(os) );
+    client.tryAcceptConst( v );
+    return os;
+}
