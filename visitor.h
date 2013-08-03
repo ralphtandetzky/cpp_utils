@@ -4,10 +4,7 @@
   @author Ralph Tandetzky
   @date 29 Jul 2013 */
 
-#include <typeinfo>
 #include <cassert>
-
-#include <utility>
 #include <memory>
 
 /**********************************
@@ -46,7 +43,7 @@ struct Visitor : virtual Visitor<T>...
         virtual void accept( ConstVisitor & v ) const = 0;
     };
 
-	template <typename S>
+    template <typename S>
     struct Visitable : VisitableInterface
     {
         virtual void accept( Visitor & v )
