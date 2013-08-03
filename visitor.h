@@ -85,18 +85,19 @@ protected:
  **  THE ACYCLIC VISITOR PATTERN  **
  ***********************************/
 
+template <typename Tag>
 struct AcyclicVisitorInterface
 {
     virtual ~AcyclicVisitorInterface() {}
 };
 
-template <typename ...T>
-struct AcyclicVisitor : virtual AcyclicVisitor<T>...
+template <typename Tag, typename ...T>
+struct AcyclicVisitor : virtual AcyclicVisitor<Tag, T>...
 {
-    typedef AcyclicVisitor<const T...> ConstVisitor;
+    typedef AcyclicVisitor<Tag,const T...> ConstVisitor;
 
     template <typename F>
-    struct Impl: AcyclicVisitor<T>::template Impl<F>...
+    struct Impl: AcyclicVisitor<Tag,T>::template Impl<F>...
     {
         template <typename...Args>
         Impl( Args&&...args ) : f(std::forward<Args>(args)...) {}
@@ -116,8 +117,8 @@ struct AcyclicVisitor : virtual AcyclicVisitor<T>...
     }
 };
 
-template <typename T>
-struct AcyclicVisitor<T> : virtual AcyclicVisitorInterface
+template <typename Tag, typename T>
+struct AcyclicVisitor<Tag,T> : virtual AcyclicVisitorInterface<Tag>
 {
     virtual void visit( T & ) = 0;
 
@@ -130,28 +131,29 @@ struct AcyclicVisitor<T> : virtual AcyclicVisitorInterface
     };
 };
 
+template <typename Tag>
 struct AcyclicVisitableInterface
 {
     virtual ~AcyclicVisitableInterface() {}
-    virtual bool tryAccept     ( AcyclicVisitorInterface & v )       = 0;
-    virtual bool tryAcceptConst( AcyclicVisitorInterface & v ) const = 0;
+    virtual bool tryAccept     ( AcyclicVisitorInterface<Tag> & v )       = 0;
+    virtual bool tryAcceptConst( AcyclicVisitorInterface<Tag> & v ) const = 0;
 };
 
-template <typename S>
-struct AcyclicVisitable : virtual AcyclicVisitableInterface
+template <typename Tag, typename S>
+struct AcyclicVisitable : virtual AcyclicVisitableInterface<Tag>
 {
-    virtual bool tryAccept( AcyclicVisitorInterface & v )
+    virtual bool tryAccept( AcyclicVisitorInterface<Tag> & v )
 	{
-        const auto pv = dynamic_cast<AcyclicVisitor<S>*>(&v);
+        const auto pv = dynamic_cast<AcyclicVisitor<Tag,S>*>(&v);
         if ( !pv )
 			return false;
         pv->visit( static_cast<S&>(*this) );
 		return true;
 	}
 
-    virtual bool tryAcceptConst( AcyclicVisitorInterface & v ) const
+    virtual bool tryAcceptConst( AcyclicVisitorInterface<Tag> & v ) const
 	{
-        const auto pv = dynamic_cast<AcyclicVisitor<const S>*>(&v);
+        const auto pv = dynamic_cast<AcyclicVisitor<Tag,const S>*>(&v);
         if ( !pv )
 			return false;
         pv->visit( static_cast<const S&>(*this) );
