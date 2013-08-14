@@ -45,7 +45,7 @@ private:
 };
 
 template <ScopeGuardExitType E>
-class ScopeGuardImpl
+struct ScopeGuardImpl
 {
     template <typename F>
     ScopeGuard<F,E> operator+=( F && f )

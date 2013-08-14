@@ -1,5 +1,6 @@
 #pragma once
 
+/*
 #include "locking.h"
 #include "scope_guard.h"
 #include "spin_lock.h"
@@ -56,8 +57,7 @@ public:
         {
             auto lock = makeUniqueLock( mutex );
             ++nWaitingThreads;
-            while ( !first )
-                cv.wait( lock );
+            cv.wait( lock, [&](){ return !first; } );
             --nWaitingThreads;
             p = std::move(first);
             first = std::move(p->next);
@@ -84,4 +84,63 @@ private:
     SpinLock mutex;
     std::condition_variable_any cv;
     size_t nWaitingThreads;
+};
+*/
+
+#include <mutex>
+#include <condition_variable>
+#include <queue>
+
+#include "locking.h"
+#include "scope_guard.h"
+
+template <typename T>
+class ConcurrentQueue
+{
+public:
+    template <typename ...Args>
+    void emplace( Args&&...args )
+    {
+        MAKE_LOCK_GUARD(m);
+        q.emplace( std::forward<Args>(args)... );
+        cv.notify_one();
+    }
+
+    void push( const T &  t ) { emplace(           t  ); }
+    void push(       T && t ) { emplace( std::move(t) ); }
+
+    bool tryPop( T & t )
+    {
+        MAKE_LOCK_GUARD(m);
+        if ( q.empty() )
+            return false;
+        t = std::move( q.front() );
+        q.pop();
+        return true;
+    }
+
+    T pop()
+    {
+        auto lock = makeUniqueLock(m);
+        cv.wait( lock, [=](){ return !q.empty(); } );
+        SCOPE_SUCCESS { q.pop(); };
+        return std::move( q.front() );
+    }
+
+private:
+    struct Node
+    {
+        template <typename ...Args>
+        Node( Args&&...args )
+            : data( std::forward<Args>(args)... )
+        {
+        }
+
+        T data;
+        std::unique_ptr<Node> next;
+    };
+
+    std::mutex m;
+    std::condition_variable_any cv;
+    std::queue<T> q;
 };

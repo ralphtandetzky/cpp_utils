@@ -9,10 +9,11 @@
 class ParallelExecutor
 {
 public:
-    ParallelExecutor()
+    explicit ParallelExecutor( size_t nThreads = 0 )
         : done(false)
     {
-        const size_t nThreads = std::thread::hardware_concurrency();
+        if ( nThreads == 0 )
+            nThreads = std::thread::hardware_concurrency();
         for ( size_t i = 0; i < nThreads; ++i )
             threads.emplace_back( [=]() { while ( !done ) q.pop()(); });
     }
