@@ -1,5 +1,7 @@
 #pragma once
 
+namespace cu {
+
 template <class InputIterator, class T, class BinOp>
 T moving_accumulate (
         InputIterator first, InputIterator last, T init, BinOp binop)
@@ -22,3 +24,5 @@ T moving_accumulate (
   }
   return init;
 }
+
+} // namespace cu

@@ -1,5 +1,7 @@
 #pragma once
 
+namespace cu {
+
 template <typename ...>
 class VirtualCall;
 
@@ -43,3 +45,5 @@ VirtualCallImpl<Ret(Args...),F> makeVirtual( F && f )
 {
     return VirtualCallImpl<Ret(Args...),F>( std::forward<F>(f) );
 }
+
+} // namespace cu

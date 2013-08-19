@@ -94,8 +94,10 @@ private:
 #include "locking.h"
 #include "scope_guard.h"
 
+namespace cu {
+
 template <typename T>
-class ConcurrentQueue
+class concurrent_queue
 {
 public:
     template <typename ...Args>
@@ -121,26 +123,16 @@ public:
 
     T pop()
     {
-        auto lock = makeUniqueLock(m);
+        auto lock = make_unique_lock(m);
         cv.wait( lock, [=](){ return !q.empty(); } );
         SCOPE_SUCCESS { q.pop(); };
         return std::move( q.front() );
     }
 
 private:
-    struct Node
-    {
-        template <typename ...Args>
-        Node( Args&&...args )
-            : data( std::forward<Args>(args)... )
-        {
-        }
-
-        T data;
-        std::unique_ptr<Node> next;
-    };
-
     std::mutex m;
     std::condition_variable_any cv;
     std::queue<T> q;
 };
+
+} // namespace cu

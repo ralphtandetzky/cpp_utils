@@ -2,13 +2,13 @@
 
 #include <memory>
 
-namespace std
+namespace cu
 {
 
 template <typename T, typename...Args>
-unique_ptr<T> make_unique( Args &&...args )
+std::unique_ptr<T> make_unique( Args &&...args )
 {
-    return unique_ptr<T>( new T( std::forward<Args>(args)... ) );
+    return std::unique_ptr<T>( new T( std::forward<Args>(args)... ) );
 }
 
-} // namespace std
+} // namespace cu

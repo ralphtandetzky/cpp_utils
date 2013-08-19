@@ -3,6 +3,8 @@
 #include <string>
 #include <algorithm>
 
+namespace cu {
+
 namespace // unnamed
 {
 
@@ -90,3 +92,5 @@ std::string burrows_wheeler_transform_inverse( std::string s, size_t index )
 		
 	return s;
 }
+
+} // namespace cu

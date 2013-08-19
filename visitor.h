@@ -7,74 +7,76 @@
 #include <cassert>
 #include <memory>
 
+namespace cu {
+
 /**********************************
  **  THE SIMPLE VISITOR PATTERN  **
  **********************************/
 
 template <typename ...T>
-struct Visitor : virtual Visitor<T>...
+struct visitor : virtual visitor<T>...
 {
-	typedef Visitor<const T...> ConstVisitor;
+	typedef visitor<const T...> const_visitor;
 
     template <typename F>
-    struct Impl : Visitor, Visitor<T>::template Impl<F>...
+    struct impl : visitor, visitor<T>::template impl<F>...
     {
         template <typename...Args>
-        explicit Impl( Args&&...args ) : f(std::forward<Args>(args)...) {}
-        Impl( Impl & other ) : Impl( const_cast<const Impl&>(other) ) {}
-        Impl( Impl && ) = default;
-        Impl( const Impl & ) = default;
-        Impl( const Impl && other ) : Impl( static_cast<const Impl&>(other) ) {}
+        explicit impl( Args&&...args ) : f(std::forward<Args>(args)...) {}
+        impl( impl & other ) : impl( const_cast<const impl&>(other) ) {}
+        impl( impl && ) = default;
+        impl( const impl & ) = default;
+        impl( const impl && other ) : impl( static_cast<const impl&>(other) ) {}
     private:
-        F & getFunctor() override { return f; }
+        F & get_functor() override { return f; }
         F f;
     };
 
     template <typename F>
-    static Impl<F> makeImpl( F f )
+    static impl<F> make_impl( F f )
     {
-        return Impl<F>( std::move(f) );
+        return impl<F>( std::move(f) );
     }
 
-    struct VisitableInterface
+    struct visitable_interface
     {
-        virtual ~VisitableInterface() {}
-        virtual void accept( Visitor & v ) = 0;
-        virtual void accept( ConstVisitor & v ) const = 0;
+        virtual ~visitable_interface() {}
+        virtual void accept( visitor & v ) = 0;
+        virtual void accept( const_visitor & v ) const = 0;
     };
 
     template <typename S>
-    struct Visitable : VisitableInterface
+    struct visitable : visitable_interface
     {
-        virtual void accept( Visitor & v )
+        virtual void accept( visitor & v )
         {
             assert( typeid( *this ) == typeid( S ) );
-            static_cast<Visitor<S>&>(v).visit(
+            static_cast<visitor<S>&>(v).visit(
                 static_cast<S&>(*this) );
         }
 
-        virtual void accept( ConstVisitor & v ) const
+        virtual void accept( const_visitor & v ) const
         {
             assert( typeid( *this ) == typeid( const S ) );
-            static_cast<Visitor<const S>&>(v).visit(
+            static_cast<visitor<const S>&>(v).visit(
                 static_cast<const S&>(*this) );
         }
     };
 };
 
 template <typename T>
-struct Visitor<T>
+struct visitor<T>
 {
-	virtual ~Visitor() {}
+	virtual ~visitor() {}
 	virtual void visit( T & t ) = 0;
 
 protected:
     template <typename F>
-    struct Impl : virtual Visitor<T>
+    struct impl : virtual visitor<T>
     {
-        void visit( T & t ) override { getFunctor()( t ); }
+        void visit( T & t ) override { get_functor()( t ); }
     private:
-        virtual F & getFunctor() = 0;
+        virtual F & get_functor() = 0;
     };
 };
 
@@ -83,64 +85,64 @@ protected:
  **  THE ACYCLIC VISITOR PATTERN  **
  ***********************************/
 
-struct AcyclicVisitorInterface
+struct acyclic_visitor_interface
 {
-    virtual ~AcyclicVisitorInterface() {}
+    virtual ~acyclic_visitor_interface() {}
 };
 
 template <typename ...T>
-struct AcyclicVisitor : virtual AcyclicVisitor<T>...
+struct acyclic_visitor : virtual acyclic_visitor<T>...
 {
-    typedef AcyclicVisitor<const T...> ConstVisitor;
+    typedef acyclic_visitor<const T...> const_visitor;
 
     template <typename F>
-    struct Impl: AcyclicVisitor<T>::template Impl<F>...
+    struct impl: acyclic_visitor<T>::template impl<F>...
     {
         template <typename...Args>
-        Impl( Args&&...args ) : f(std::forward<Args>(args)...) {}
-        Impl( Impl & other ) : Impl( const_cast<const Impl&>(other) ) {}
-        Impl( Impl && ) = default;
-        Impl( const Impl & ) = default;
-        Impl( const Impl && other ) : Impl( static_cast<const Impl&>(other) ) {}
+        impl( Args&&...args ) : f(std::forward<Args>(args)...) {}
+        impl( impl & other ) : impl( const_cast<const impl&>(other) ) {}
+        impl( impl && ) = default;
+        impl( const impl & ) = default;
+        impl( const impl && other ) : impl( static_cast<const impl&>(other) ) {}
     private:
-        F & getFunctor() override { return f; }
+        F & get_functor() override { return f; }
         F f;
     };
 
     template <typename F>
-    static Impl<F> makeImpl( F f )
+    static impl<F> make_impl( F f )
     {
-        return Impl<F>( std::move(f) );
+        return impl<F>( std::move(f) );
     }
 };
 
 template <typename T>
-struct AcyclicVisitor<T> : virtual AcyclicVisitorInterface
+struct acyclic_visitor<T> : virtual acyclic_visitor_interface
 {
     virtual void visit( T & ) = 0;
 
     template <typename F>
-    struct Impl : virtual AcyclicVisitor
+    struct impl : virtual acyclic_visitor
     {
-        void visit( T & t ) override { getFunctor()(t); }
+        void visit( T & t ) override { get_functor()(t); }
     private:
-        virtual F & getFunctor() = 0;
+        virtual F & get_functor() = 0;
     };
 };
 
-struct AcyclicVisitableInterface
+struct acyclic_visitable_interface
 {
-    virtual ~AcyclicVisitableInterface() {}
-    virtual bool tryAccept     ( AcyclicVisitorInterface & v )       = 0;
-    virtual bool tryAcceptConst( AcyclicVisitorInterface & v ) const = 0;
+    virtual ~acyclic_visitable_interface() {}
+    virtual bool try_accept      ( acyclic_visitor_interface & v )       = 0;
+    virtual bool try_accept_const( acyclic_visitor_interface & v ) const = 0;
 };
 
 template <typename S>
-struct AcyclicVisitable : virtual AcyclicVisitableInterface
+struct acyclic_visitable : virtual acyclic_visitable_interface
 {
-    virtual bool tryAccept( AcyclicVisitorInterface & v )
+    virtual bool try_accept( acyclic_visitor_interface & v )
 	{
-        const auto pv = dynamic_cast<AcyclicVisitor<S>*>(&v);
+        const auto pv = dynamic_cast<acyclic_visitor<S>*>(&v);
         if ( pv )
         {
             pv->visit( static_cast<S&>(*this) );
@@ -149,9 +151,9 @@ struct AcyclicVisitable : virtual AcyclicVisitableInterface
         return false;
     }
 
-    virtual bool tryAcceptConst( AcyclicVisitorInterface & v ) const
+    virtual bool try_accept_const( acyclic_visitor_interface & v ) const
 	{
-        const auto pv = dynamic_cast<AcyclicVisitor<const S>*>(&v);
+        const auto pv = dynamic_cast<acyclic_visitor<const S>*>(&v);
         if ( pv )
         {
             pv->visit( static_cast<const S&>(*this) );
@@ -167,7 +169,7 @@ struct AcyclicVisitable : virtual AcyclicVisitableInterface
  ***********************/
 
 template <typename Base>
-struct Cloner
+struct cloner
 {
     template <typename T>
     void operator()( const T & t )
@@ -176,22 +178,22 @@ struct Cloner
     std::unique_ptr<Base> copy;
 };
 
-template <typename V, typename Base = typename V::VisitableInterface>
-std::unique_ptr<Base> clone( const typename V::VisitableInterface & client )
+template <typename V, typename Base = typename V::visitable_interface>
+std::unique_ptr<Base> clone( const typename V::visitable_interface & client )
 {
-    Cloner<Base> cloner;
-    typename V::ConstVisitor::template Impl<Cloner<Base>&> v( cloner );
+    cloner<Base> c_;
+    typename V::const_visitor::template impl<cloner<Base>&> v( c_ );
     client.accept( v );
-    return std::move(cloner.copy);
+    return std::move(c_.copy);
 }
 
 template <typename V, typename Base>
-std::unique_ptr<Base> clone( const AcyclicVisitableInterface & client )
+std::unique_ptr<Base> clone( const acyclic_visitable_interface & client )
 {
-    Cloner<Base> cloner;
-    typename V::ConstVisitor::template Impl<Cloner<Base>&> v( cloner );
-    client.tryAcceptConst( v );
-    return std::move(cloner.copy);
+    cloner<Base> c_;
+    typename V::const_visitor::template impl<cloner<Base>&> v( c_ );
+    client.try_accept_const( v );
+    return std::move(c_.copy);
 }
 
 
@@ -200,9 +202,9 @@ std::unique_ptr<Base> clone( const AcyclicVisitableInterface & client )
  *************************/
 
 template <typename OutputStream>
-struct Streamer
+struct streamer
 {
-    Streamer( OutputStream & os ) : os(os) {}
+    streamer( OutputStream & os ) : os(os) {}
 
     template <typename T>
     void operator()( const T & t ) { os << t; }
@@ -212,17 +214,19 @@ private:
 };
 
 template <typename V, typename OutputStream>
-OutputStream & print( OutputStream & os, const typename V::VisitableInterface & client )
+OutputStream & print( OutputStream & os, const typename V::visitable_interface & client )
 {
-    auto v = V::ConstVisitor::makeImpl( Streamer<OutputStream>(os) );
+    auto v = V::const_visitor::make_impl( streamer<OutputStream>(os) );
     client.accept( v );
     return os;
 }
 
 template <typename V, typename OutputStream>
-OutputStream & print( OutputStream & os, const AcyclicVisitableInterface & client )
+OutputStream & print( OutputStream & os, const acyclic_visitable_interface & client )
 {
-    auto v = V::ConstVisitor::makeImpl( Streamer<OutputStream>(os) );
-    client.tryAcceptConst( v );
+    auto v = V::const_visitor::make_impl( streamer<OutputStream>(os) );
+    client.try_accept_const( v );
     return os;
 }
+
+} // namespace cu

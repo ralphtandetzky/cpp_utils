@@ -2,27 +2,31 @@
 
 #include <atomic>
 
-class SpinLock
+namespace cu {
+
+class spin_lock
 {
 
 public:
-    SpinLock()
-        : state(Unlocked)
+    spin_lock()
+        : state(unlocked)
     {
     }
 
     void lock()
     {
-        while ( state.exchange(Locked, std::memory_order_acquire) == Locked )
+        while ( state.exchange(locked, std::memory_order_acquire) == locked )
         { /* busy-wait */ }
     }
 
     void unlock()
     {
-        state.store(Unlocked, std::memory_order_release);
+        state.store(unlocked, std::memory_order_release);
     }
 
 private:
-    typedef enum { Locked, Unlocked } LockState;
-    std::atomic<LockState> state;
+    typedef enum { locked, unlocked } lock_state;
+    std::atomic<lock_state> state;
 };
+
+} // namespace cu

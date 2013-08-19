@@ -1,24 +1,18 @@
-/** @file cow_ptr.h
+/// @file
+///
+/// This file works with the following compilers
+///   - gcc 4.6.3 with the command line option -std=c++0x.
+///
+/// @author Ralph Tandetzky
+/// @date 04 Feb 2013 */
 
-    This file works with the following compilers
-      - gcc 4.6.3 with the command line option -std=c++0x.
-
-  @author Ralph Tandetzky
-  @date 04 Feb 2013 */
-
-//             Copyright Ralph Tandetzky 2013.
-// Distributed under the Boost Software License, Version 1.0.
-//    (See accompanying file LICENSE_1_0.txt or copy at
-//          http://www.boost.org/LICENSE_1_0.txt)
-
-#ifndef COW_PTR_H
-#define COW_PTR_H
+#pragma once
 
 #include <atomic>
 #include <cassert>
 #include <memory> // std::default_delete
 
-namespace cow
+namespace cu
 {
 
 /// Functor which creates a new copy of an object pointed to.
@@ -897,6 +891,5 @@ bool operator!=( std::nullptr_t, const cow_ptr<T> & p )
     return p.get() != nullptr;
 }
 
-} // namespace cow
+} // namespace cu
 
-#endif // COW_PTR_H

@@ -6,10 +6,12 @@
 #include <thread>
 #include <vector>
 
-class ParallelExecutor
+namespace cu {
+
+class parallel_executor
 {
 public:
-    explicit ParallelExecutor( size_t nThreads = 0 )
+    explicit parallel_executor( size_t nThreads = 0 )
         : done(false)
     {
         if ( nThreads == 0 )
@@ -18,7 +20,7 @@ public:
             threads.emplace_back( [=]() { while ( !done ) q.pop()(); });
     }
 
-    ~ParallelExecutor()
+    ~parallel_executor()
     {
         for ( size_t i = 0; i < threads.size(); ++i )
             q.emplace( [=]() { done = true; });
@@ -37,7 +39,9 @@ public:
     }
 
 private:
-    ConcurrentQueue<std::packaged_task<void()>> q;
+    concurrent_queue<std::packaged_task<void()>> q;
     std::atomic<bool> done;
     std::vector<std::thread> threads;
 };
+
+} // namespace cu
