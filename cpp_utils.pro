@@ -14,6 +14,7 @@ TEMPLATE = lib
 DEFINES += CPP_UTILS_LIBRARY
 
 SOURCES +=
+	bwt.cpp
 
 HEADERS += \
     std_make_unique.h \
@@ -23,7 +24,8 @@ HEADERS += \
     scope_guard.h \
     parallel_executor.h \
     spin_lock.h \
-    locking.h
+    locking.h \
+    bwt.h
 
 unix:!symbian {
     maemo5 {
