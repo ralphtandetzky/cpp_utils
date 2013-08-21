@@ -1,3 +1,6 @@
+# user files of Qt
+*.pro.user*
+
 # temporary files
 *~
 
