@@ -3,7 +3,7 @@
 namespace cu {
 
 template <class InputIterator, class T, class BinOp>
-T moving_accumulate (
+T MovingAccumulate (
         InputIterator first, InputIterator last, T init, BinOp binop)
 {
   while ( first != last ) {
@@ -15,7 +15,7 @@ T moving_accumulate (
 
 
 template <class InputIterator, class T, class BinOp>
-T moving_accumulate (
+T MovingAccumulate (
         InputIterator first, InputIterator last, T init )
 {
   while ( first != last ) {

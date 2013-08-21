@@ -97,7 +97,7 @@ private:
 namespace cu {
 
 template <typename T>
-class concurrent_queue
+class ConcurrentQueue
 {
 public:
     template <typename ...Args>
@@ -123,7 +123,7 @@ public:
 
     T pop()
     {
-        auto lock = make_unique_lock(m);
+        auto lock = cu::MakeUniqueLock(m);
         cv.wait( lock, [=](){ return !q.empty(); } );
         SCOPE_SUCCESS { q.pop(); };
         return std::move( q.front() );

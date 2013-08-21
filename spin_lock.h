@@ -4,11 +4,11 @@
 
 namespace cu {
 
-class spin_lock
+class SpinLock
 {
 
 public:
-    spin_lock()
+    SpinLock()
         : state(unlocked)
     {
     }
@@ -25,8 +25,8 @@ public:
     }
 
 private:
-    typedef enum { locked, unlocked } lock_state;
-    std::atomic<lock_state> state;
+    typedef enum { locked, unlocked } LockState;
+    std::atomic<LockState> state;
 };
 
 } // namespace cu
