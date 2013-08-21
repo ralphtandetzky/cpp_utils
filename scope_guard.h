@@ -2,38 +2,38 @@
 
 #include <cassert>
 
-#define SCOPE_EXIT    SCOPE_IMPL( scope_guard_exit_t::any     )
-#define SCOPE_FAIL    SCOPE_IMPL( scope_guard_exit_t::fail    )
-#define SCOPE_SUCCESS SCOPE_IMPL( scope_guard_exit_t::success )
-#define SCOPE_IMPL(exit_type) \
-    auto guard ## __LINE__ = scope_guard_impl<exit_type>() += [&]()
+#define SCOPE_EXIT    SCOPE_IMPL( ScopeGuardExitType::any     )
+#define SCOPE_FAIL    SCOPE_IMPL( ScopeGuardExitType::fail    )
+#define SCOPE_SUCCESS SCOPE_IMPL( ScopeGuardExitType::success )
+#define SCOPE_IMPL(exitType) \
+    auto guard ## __LINE__ = ScopeGuardImpl<exitType>() += [&]()
 
 namespace cu {
 
-enum class scope_guard_exit_t
+enum class ScopeGuardExitType
 {
     any,
     fail,
     success
 };
 
-template <typename F, scope_guard_exit_t E>
-class scope_guard
+template <typename F, ScopeGuardExitType E>
+class ScopeGuard
 {
 public:
-    scope_guard( F && f ) : f( std::forward<F>(f) ) {}
-    ~scope_guard()
+    ScopeGuard( F && f ) : f( std::forward<F>(f) ) {}
+    ~ScopeGuard()
     {
         switch (E)
         {
-        case scope_guard_exit_t::any:
+        case ScopeGuardExitType::any:
             f();
             break;
-        case scope_guard_exit_t::fail:
+        case ScopeGuardExitType::fail:
             if ( std::uncaught_exception() )
                 f();
             break;
-        case scope_guard_exit_t::success:
+        case ScopeGuardExitType::success:
             if ( !std::uncaught_exception() )
                 f();
             break;
@@ -46,13 +46,13 @@ private:
     F f;
 };
 
-template <scope_guard_exit_t E>
-struct scope_guard_impl
+template <ScopeGuardExitType E>
+struct ScopeGuardImpl
 {
     template <typename F>
-    scope_guard<F,E> operator+=( F && f )
+    ScopeGuard<F,E> operator+=( F && f )
     {
-        return scope_guard<F,E>( std::forward<F>(f) );
+        return ScopeGuard<F,E>( std::forward<F>(f) );
     }
 };
 

@@ -8,10 +8,10 @@
 
 namespace cu {
 
-class parallel_executor
+class ParallelExecutor
 {
 public:
-    explicit parallel_executor( size_t nThreads = 0 )
+    explicit ParallelExecutor( size_t nThreads = 0 )
         : done(false)
     {
         if ( nThreads == 0 )
@@ -20,7 +20,7 @@ public:
             threads.emplace_back( [=]() { while ( !done ) q.pop()(); });
     }
 
-    ~parallel_executor()
+    ~ParallelExecutor()
     {
         for ( size_t i = 0; i < threads.size(); ++i )
             q.emplace( [=]() { done = true; });
@@ -39,7 +39,7 @@ public:
     }
 
 private:
-    concurrent_queue<std::packaged_task<void()>> q;
+    ConcurrentQueue<std::packaged_task<void()>> q;
     std::atomic<bool> done;
     std::vector<std::thread> threads;
 };
