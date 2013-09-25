@@ -30,9 +30,9 @@ protected:
     struct Impl
     {
         Impl(
-              std::string shortName
-            , std::string fullName
-            , std::string description
+              std::string && shortName
+            , std::string && fullName
+            , std::string && description
             )
             : shortName  (std::move(shortName  ))
             , fullName   (std::move(fullName   ))
@@ -56,7 +56,7 @@ private:
 };
 
 
-class RealUserParameter
+class RealUserParameter final
     : public UserParameter
     , virtual public UserParameterVisitor::Visitable<RealUserParameter>
 {
@@ -72,8 +72,10 @@ public:
                        , std::string suffix
                        , size_t index = 0 )
         : UserParameter( cu::cow_ptr<UserParameter::Impl>::make<Impl>(
-            shortName, fullName, description, lowerBound,
-            upperBound, stepSize, nDecimals, suffix ), index )
+            std::move(shortName),
+            std::move(fullName),
+            std::move(description),
+            lowerBound, upperBound, stepSize, nDecimals, suffix ), index )
         , value(value)
     {}
 
@@ -88,16 +90,19 @@ public:
 protected:
     struct Impl : UserParameter::Impl
     {
-        Impl( std::string shortName
-            , std::string fullName
-            , std::string description
+        Impl( std::string && shortName
+            , std::string && fullName
+            , std::string && description
             , double lowerBound
             , double upperBound
             , double stepSize
             , size_t nDecimals
             , std::string suffix
             )
-            : UserParameter::Impl( shortName, fullName, description )
+            : UserParameter::Impl(
+                  std::move(shortName),
+                  std::move(fullName),
+                  std::move(description) )
             , lowerBound(std::move(lowerBound))
             , upperBound(std::move(upperBound))
             , stepSize  (std::move(stepSize  ))
@@ -121,5 +126,89 @@ private:
     double value;
 };
 
+
+class IntUserParameter final
+    : public UserParameter
+    , virtual public UserParameterVisitor::Visitable<IntUserParameter>
+{
+public:
+    IntUserParameter( int value
+                      , std::string shortName
+                      , std::string fullName
+                      , std::string description
+                      , int lowerBound
+                      , int upperBound
+                      , int stepSize
+                      , size_t index = 0 )
+        : UserParameter( cu::cow_ptr<UserParameter::Impl>::make<Impl>(
+            std::move(shortName),
+            std::move(fullName),
+            std::move(description),
+            lowerBound, upperBound, stepSize ), index )
+        , value(value)
+    {}
+
+    double getLowerBound () const { return getImpl().lowerBound; }
+    double getUpperBound () const { return getImpl().upperBound; }
+    int    getValue      () const { return value; }
+    void   setValue( int val ) { value = val; }
+
+protected:
+    struct Impl : UserParameter::Impl
+    {
+        Impl( std::string && shortName
+            , std::string && fullName
+            , std::string && description
+            , int lowerBound
+            , int upperBound
+            , int stepSize
+            )
+            : UserParameter::Impl(
+                  std::move(shortName),
+                  std::move(fullName),
+                  std::move(description) )
+            , lowerBound(std::move(lowerBound))
+            , upperBound(std::move(upperBound))
+            , stepSize  (std::move(stepSize  ))
+        {}
+
+        int lowerBound;
+        int upperBound;
+        int stepSize  ;
+    };
+
+    virtual const Impl & getImpl() const override
+    {
+        return static_cast<const Impl&>(UserParameter::getImpl());
+    }
+
+private:
+    int value;
+};
+
+
+class BoolUserParameter final
+    : public UserParameter
+    , virtual public UserParameterVisitor::Visitable<BoolUserParameter>
+{
+public:
+    BoolUserParameter( bool value
+                      , std::string shortName
+                      , std::string fullName
+                      , std::string description
+                      , size_t index = 0 )
+        : UserParameter( cu::cow_ptr<UserParameter::Impl>::make<UserParameter::Impl>(
+            std::move(shortName),
+            std::move(fullName),
+            std::move(description) ), index )
+        , value(value)
+    {}
+
+    bool   getValue      () const { return value; }
+    void   setValue( bool val ) { value = val; }
+
+private:
+    bool value;
+};
 
 } // namespace cu
