@@ -173,7 +173,9 @@ struct cloner
 {
     template <typename T>
     void operator()( const T & t )
-    { copy = std::unique_ptr<Base>( new T(t) ); }
+    {
+        copy = std::unique_ptr<Base>( new T(t) );
+    }
 
     std::unique_ptr<Base> copy;
 };
@@ -197,6 +199,49 @@ std::unique_ptr<Base> clone( const AcyclicVisitableInterface & client )
 }
 
 
+/**************************
+ **  GENERIC ASSIGNMENT  **
+ **************************/
+
+template <typename Base>
+struct assigner
+{
+    assigner( const Base & src )
+        : src(src)
+    {
+    }
+
+    template <typename T>
+    void operator()( T & t )
+    {
+        t = dynamic_cast<const T &>(src);
+    }
+
+    const Base & src;
+};
+
+template <typename V>
+void assign(    typename V::VisitableInterface & dest
+        , const typename V::VisitableInterface & src )
+{
+    assert( typeid(dest) == typeid(src) );
+    using Base = typename V::VisitableInterface;
+    assigner<Base> a_(src);
+    typename V::Visitor::template Impl<assigner<Base>&> v( a_ );
+    dest.accept( v );
+}
+
+template <typename V>
+void assign(    AcyclicVisitableInterface & dest
+        , const AcyclicVisitableInterface & src )
+{
+    assert( typeid(dest) == typeid(src) );
+    using Base = typename V::VisitableInterface;
+    assigner<Base> a_(src);
+    typename V::ConstVisitor::template Impl<assigner<Base>&> v( a_ );
+    dest.tryAcceptConst( v );
+}
+
 /*************************
  **  GENERIC STREAMING  **
  *************************/
@@ -204,10 +249,16 @@ std::unique_ptr<Base> clone( const AcyclicVisitableInterface & client )
 template <typename OutputStream>
 struct streamer
 {
-    streamer( OutputStream & os ) : os(os) {}
+    streamer( OutputStream & os )
+        : os(os)
+    {
+    }
 
     template <typename T>
-    void operator()( const T & t ) { os << t; }
+    void operator()( const T & t )
+    {
+        os << t;
+    }
 
 private:
     OutputStream & os;
