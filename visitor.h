@@ -1,8 +1,8 @@
-/** @file This file contains some C++ template code which makes it easy
-    to Implement the Visitor pattern.
-    
-  @author Ralph Tandetzky
-  @date 29 Jul 2013 */
+/// @file This file contains some C++ template code which makes it easy
+///     to Implement the Visitor pattern.
+///
+/// @author Ralph Tandetzky
+/// @date 29 Jul 2013
 
 #include <cassert>
 #include <memory>
