@@ -3,6 +3,8 @@
 #include "cow_ptr.h"
 #include "visitor.h"
 
+#include <string>
+
 namespace cu {
 
 class RealUserParameter;
@@ -19,9 +21,9 @@ using ConstUserParameterVisitor = UserParameterVisitor::ConstVisitor;
 class UserParameter : virtual public UserParameterVisitor::VisitableInterface
 {
 public:
-    std::string getParameterShortName  () const { return getImpl().shortName  ; }
-    std::string getParameterFullName   () const { return getImpl().fullName   ; }
-    std::string getParameterDescription() const { return getImpl().description; }
+    std::string getShortName  () const { return getImpl().shortName  ; }
+    std::string getFullName   () const { return getImpl().fullName   ; }
+    std::string getDescription() const { return getImpl().description; }
     size_t getIndex() const { return index; }
     void setIndex( size_t val ) { index = val; }
 
@@ -148,10 +150,11 @@ public:
         , value(value)
     {}
 
-    double getLowerBound () const { return getImpl().lowerBound; }
-    double getUpperBound () const { return getImpl().upperBound; }
-    int    getValue      () const { return value; }
-    void   setValue( int val ) { value = val; }
+    int  getLowerBound () const { return getImpl().lowerBound; }
+    int  getUpperBound () const { return getImpl().upperBound; }
+    int  getStepSize   () const { return getImpl().stepSize  ; }
+    int  getValue      () const { return value; }
+    void setValue( int val ) { value = val; }
 
 protected:
     struct Impl : UserParameter::Impl
