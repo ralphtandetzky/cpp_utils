@@ -18,7 +18,8 @@ using UserParameterVisitor = Visitor<
 using ConstUserParameterVisitor = UserParameterVisitor::ConstVisitor;
 
 
-class UserParameter : virtual public UserParameterVisitor::VisitableInterface
+class UserParameter
+        : virtual public UserParameterVisitor::VisitableInterface
 {
 public:
     std::string getShortName  () const { return getImpl().shortName  ; }
@@ -56,6 +57,18 @@ private:
     cu::cow_ptr<Impl> m;
     size_t index;
 };
+
+inline std::unique_ptr<UserParameter> clone(
+        const UserParameter & param
+        )
+{
+    return clone<UserParameterVisitor,UserParameter>( param );
+}
+
+void assign(
+        UserParameter & dest
+        , const UserParameter & src
+        );
 
 
 class RealUserParameter final
