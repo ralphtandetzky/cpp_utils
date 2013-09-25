@@ -46,20 +46,20 @@ struct Visitor : virtual Visitor<T>...
     };
 
     template <typename S>
-    struct Visitable : VisitableInterface
+    struct Visitable : virtual VisitableInterface
     {
         virtual void accept( Visitor & v )
         {
             assert( typeid( *this ) == typeid( S ) );
             static_cast<Visitor<S>&>(v).visit(
-                static_cast<S&>(*this) );
+                dynamic_cast<S&>(*this) );
         }
 
         virtual void accept( ConstVisitor & v ) const
         {
             assert( typeid( *this ) == typeid( const S ) );
             static_cast<Visitor<const S>&>(v).visit(
-                static_cast<const S&>(*this) );
+                dynamic_cast<const S&>(*this) );
         }
     };
 };
