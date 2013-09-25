@@ -1,5 +1,4 @@
-/// @file Never implement cloning manually anymore by
-/// using this header file.
+/// @file @brief Never implement cloning manually anymore!
 ///
 /// @author Ralph Tandetzky
 /// @date 25 Sep 2013
@@ -29,6 +28,7 @@ private:
 };
 
 
+/// Implements cloning for abstract base classes
 template <typename T, typename Base = Clonable>
 class AbstractClonable
         : public Base

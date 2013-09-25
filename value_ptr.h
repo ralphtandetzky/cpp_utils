@@ -1,3 +1,8 @@
+/// @file
+///
+/// @author Ralph Tandetzky
+/// @date 21 Aug 2013
+
 #pragma once
 #include <utility>
 #include <memory>

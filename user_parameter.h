@@ -1,3 +1,8 @@
+/// @file
+///
+/// @author Ralph Tandetzky
+/// @date 25 Sep 2013
+
 #pragma once
 
 #include "cow_ptr.h"

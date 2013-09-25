@@ -1,3 +1,8 @@
+/// @file
+///
+/// @author Ralph Tandetzky
+/// @date 14 Aug 2013
+
 #pragma once
 
 namespace cu {

@@ -1,5 +1,8 @@
 /// \file 
 /// \brief This file provides functions around the Burrows-Wheeler-Transform.
+///
+/// @author Ralph Tandetzky
+/// @date 19 Aug 2013
 
 #pragma once
 
