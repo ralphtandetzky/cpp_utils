@@ -11,7 +11,7 @@
 
 namespace cu {
 
-/// Interface class for all clonable objects.
+/// Interface base class for all clonable objects.
 class Clonable
 {
 public:
