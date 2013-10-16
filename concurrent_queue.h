@@ -7,7 +7,7 @@
 
 #include <mutex>
 #include <condition_variable>
-#include <queue>
+#include <list>
 
 #include "locking.h"
 #include "scope_guard.h"
@@ -21,8 +21,10 @@ public:
     template <typename ...Args>
     void emplace( Args&&...args )
     {
+        std::list<T> node;
+        node.emplace_back( std::forward<Args>(args)... );
         MAKE_LOCK_GUARD(m);
-        q.emplace( std::forward<Args>(args)... );
+        q.splice( end(q), move(node) );
         cv.notify_one();
     }
 
@@ -31,26 +33,32 @@ public:
 
     bool tryPop( T & t )
     {
-        MAKE_LOCK_GUARD(m);
-        if ( q.empty() )
-            return false;
+        std::list<T> node;
+        {
+            MAKE_LOCK_GUARD(m);
+            if ( q.empty() )
+                return false;
+            node.splice( end(node), begin(q) );
+        }
         t = std::move( q.front() );
-        q.pop();
         return true;
     }
 
     T pop()
     {
-        auto lock = cu::MakeUniqueLock(m);
-        cv.wait( lock, [=](){ return !q.empty(); } );
-        SCOPE_SUCCESS { q.pop(); };
-        return std::move( q.front() );
+        std::list<T> node;
+        {
+            auto lock = cu::MakeUniqueLock(m);
+            cv.wait( lock, [=]{ return !q.empty(); } );
+            node.splice( node.end(), q, q.begin() );
+        }
+        return std::move( node.front() );
     }
 
 private:
     std::mutex m;
     std::condition_variable_any cv;
-    std::queue<T> q;
+    std::list<T> q;
 };
 
 } // namespace cu
