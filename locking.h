@@ -18,4 +18,30 @@ std::unique_lock<M> MakeUniqueLock( M & m )
     return std::unique_lock<M>( m );
 }
 
+template <typename T>
+class Monitor
+{
+private:
+    T t;
+    mutable std::mutex m;
+
+public:
+    template <typename ... Ts>
+    Monitor( Ts&&...ts ) : t(std::forward<Ts>(ts)... ) {}
+
+    template <typename F>
+    auto operator()( F f ) -> decltype(f(t))
+    {
+        std::lock_guard<std::mutex> lock(m);
+        return f(t);
+    }
+
+    template <typename F>
+    auto operator()( F f ) const -> decltype(f(t))
+    {
+        std::lock_guard<std::mutex> lock(m);
+        return f(t);
+    }
+};
+
 } // namespace cu
