@@ -23,9 +23,11 @@ public:
     {
         std::list<T> node;
         node.emplace_back( std::forward<Args>(args)... );
-        MAKE_LOCK_GUARD(m);
-        q.splice( end(q), move(node) );
-        cv.notify_one();
+        data( [&]( Data & d )
+        {
+            d.q.splice( end(d.q), move(node) );
+            d.cv.notify_one();
+        } );
     }
 
     void push( const T &  t ) { emplace(           t  ); }
@@ -34,31 +36,34 @@ public:
     bool tryPop( T & t )
     {
         std::list<T> node;
+        data( [&]( Data & d )
         {
-            MAKE_LOCK_GUARD(m);
-            if ( q.empty() )
+            if ( d.q.empty() )
                 return false;
-            node.splice( end(node), begin(q) );
-        }
-        t = std::move( q.front() );
+            node.splice( end(node), d.q, begin(d.q) );
+        } );
+        t = std::move( node.front() );
         return true;
     }
 
     T pop()
     {
         std::list<T> node;
+        data.withUniqueLock( [&]( Data & d, std::unique_lock<std::mutex> lock )
         {
-            auto lock = cu::MakeUniqueLock(m);
-            cv.wait( lock, [=]{ return !q.empty(); } );
-            node.splice( node.end(), q, q.begin() );
-        }
+            d.cv.wait( lock, [&d]{ return !d.q.empty(); } );
+            node.splice( node.end(), d.q, d.q.begin() );
+        } );
         return std::move( node.front() );
     }
 
 private:
-    std::mutex m;
-    std::condition_variable_any cv;
-    std::list<T> q;
+    struct Data
+    {
+        std::condition_variable_any cv;
+        std::list<T> q;
+    };
+    Monitor<Data> data;
 };
 
 } // namespace cu
