@@ -36,6 +36,7 @@ std::vector<std::exception_ptr> getExceptionChain( std::exception_ptr p )
     return ptrs;
 }
 
+/// @pre @c p must not be a nullptr.
 template <typename Ret, typename E, typename F1>
 std::common_type<std::result_of<F1(E&)>::type,Ret>::type
     applyToException(
@@ -43,10 +44,9 @@ std::common_type<std::result_of<F1(E&)>::type,Ret>::type
         , F1 && f1
         , const Ret & otherwise )
 {
-    if ( p == std::exception_ptr() )
-        CU_THROW( "An internal failure in error "
-                  "handling procedures occurred." );
-
+    CU_ASSERT_THROW( p != std::exception_ptr(),
+                     "An internal failure in error "
+                     "handling procedures occurred." );
     try
     {
         std::rethrow_exception( p );
@@ -61,6 +61,7 @@ std::common_type<std::result_of<F1(E&)>::type,Ret>::type
     }
 }
 
+/// @pre @c p must not be a nullptr.
 std::string getWhat( std::exception_ptr p )
 {
     return detail::applyToException<std::string,std::exception>(
@@ -70,6 +71,7 @@ std::string getWhat( std::exception_ptr p )
                 "" );
 }
 
+/// @pre @c p must not be a nullptr.
 ThrowSiteInfo getThrowSiteInfo( std::exception_ptr p )
 {
     return detail::applyToException<ThrowSiteInfo,Exception>(
@@ -79,6 +81,7 @@ ThrowSiteInfo getThrowSiteInfo( std::exception_ptr p )
                 ThrowSiteInfo{} );
 }
 
+/// @pre @c p must not be a nullptr.
 template <typename E>
 bool isExceptionType( std::exception_ptr p )
 {
@@ -89,9 +92,16 @@ bool isExceptionType( std::exception_ptr p )
                 false );
 }
 
+/// @pre @c p must not be a nullptr.
 bool isUserCancelledException( std::exception_ptr p )
 {
     return isExceptionType<UserCancelledException>( p );
+}
+
+/// @pre @c p must not be a nullptr.
+bool isInternalError( std::exception_ptr p )
+{
+    return isExceptionType<InternalError>( p );
 }
 
 std::vector<std::string> getWhatChain(
