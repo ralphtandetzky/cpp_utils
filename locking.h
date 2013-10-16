@@ -42,6 +42,18 @@ public:
         std::lock_guard<std::mutex> lock(m);
         return f(t);
     }
+
+    template <typename F>
+    auto withUniqueLock( F f ) -> decltype(f(t,MakeUniqueLock(m)))
+    {
+        return f(t,MakeUniqueLock(m));
+    }
+
+    template <typename F>
+    auto withUniqueLock( F f ) const -> decltype(f(t,MakeUniqueLock(m)))
+    {
+        return f(t,MakeUniqueLock(m));
+    }
 };
 
 } // namespace cu
