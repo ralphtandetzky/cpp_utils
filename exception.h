@@ -21,7 +21,8 @@
     CU_THROW_SPECIFIC_EXCEPTION(::cu::Exception,msg)
 
 #define CU_ASSERT_THROW(cond,msg) \
-    ::cu::detail::assert_throw( (cond) ? "" : (msg), CU_THROW_SITE_INFO )
+    ::cu::exception_detail::assert_throw( \
+        (cond) ? "" : (msg), CU_THROW_SITE_INFO )
 
 #define CU_THROW_USER_CANCELLED(msg) \
     CU_THROW_SPECIFIC_EXCEPTION(::cu::UserCancelledException,msg)
@@ -79,7 +80,7 @@ public:
 using UserCancelledException = GenericException<struct UserCancelledTag>;
 using InternalError          = GenericException<struct InternalErrorTag>;
 
-namespace detail
+namespace exception_detail
 {
     template <typename String>
     void assert_throw( String && msg, const ThrowSiteInfo & tsi )

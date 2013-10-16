@@ -38,7 +38,7 @@ std::vector<std::exception_ptr> getExceptionChain( std::exception_ptr p )
 
 /// @pre @c p must not be a nullptr.
 template <typename Ret, typename E, typename F1>
-std::common_type<std::result_of<F1(E&)>::type,Ret>::type
+typename std::common_type<typename std::result_of<F1(E&)>::type,Ret>::type
     applyToException(
         std::exception_ptr p
         , F1 && f1
@@ -64,7 +64,7 @@ std::common_type<std::result_of<F1(E&)>::type,Ret>::type
 /// @pre @c p must not be a nullptr.
 std::string getWhat( std::exception_ptr p )
 {
-    return detail::applyToException<std::string,std::exception>(
+    return applyToException<std::string,std::exception>(
                 p,
                 [](const std::exception & e)
                 {return e.what();},
@@ -74,18 +74,18 @@ std::string getWhat( std::exception_ptr p )
 /// @pre @c p must not be a nullptr.
 ThrowSiteInfo getThrowSiteInfo( std::exception_ptr p )
 {
-    return detail::applyToException<ThrowSiteInfo,Exception>(
+    return applyToException<ThrowSiteInfo,Exception>(
                 p,
                 [](const Exception & e)
                 {return e.getThrowSiteInfo();},
-                ThrowSiteInfo{} );
+                ThrowSiteInfo() );
 }
 
 /// @pre @c p must not be a nullptr.
 template <typename E>
 bool isExceptionType( std::exception_ptr p )
 {
-    return detail::applyToException<bool,E>(
+    return applyToException<bool,E>(
                 p,
                 [](E&)
                 {return true;},
