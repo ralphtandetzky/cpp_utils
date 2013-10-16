@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include <cassert>
+#include "exception.h"
 #include <memory>
 
 namespace cu {
@@ -19,7 +19,9 @@ public:
     std::unique_ptr<Clonable> clone() const
     {
         std::unique_ptr<Clonable> p( doClone() );
-        assert( typeid(*p) == typeid(*this) );
+        CU_ASSERT_THROW( typeid(*p) == typeid(*this),
+                         "Could not clone. "
+                         "Incorrect dynamic type." );
         return p;
     }
 
@@ -37,7 +39,9 @@ public:
     std::unique_ptr<T> clone() const
     {
         std::unique_ptr<T> p( static_cast<T*>(doClone()) );
-        assert( typeid(*p) == typeid(*this) );
+        CU_ASSERT_THROW( typeid(*p) == typeid(*this),
+                         "Could not clone. "
+                         "Incorrect dynamic type." );
         return p;
     }
 
