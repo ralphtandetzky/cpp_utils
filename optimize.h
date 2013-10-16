@@ -5,10 +5,11 @@
 
 #pragma once
 
+#include "cpp_utils/exception.h"
+#include "cpp_utils/more_algorithms.h"
+
 #include <cassert>
 #include <random>
-
-#include "cpp_utils/more_algorithms.h"
 
 namespace cu {
 
@@ -27,10 +28,14 @@ Container differentialEvolution(
         SendBestFitFunctor sendBestFit,
         RandomNumberGenerator & rng )
 {
-    assert( swarm.size() >= 4 );
+    CU_ASSERT_THROW( swarm.size() >= 4,
+                     "Swarm size of differential evolution "
+                     "algorithm is too small." );
     const auto N = swarm[0].size();
     for ( auto & x : swarm )
-        assert( x.size() == N );
+        CU_ASSERT_THROW( x.size() == N,
+                         "Invalid input to differential "
+                         "evolution algorithm." );
     typedef decltype(costFunction(swarm[0])) Cost;
     std::vector<Cost> costs;
     std::transform( begin(swarm), end(swarm),
@@ -96,11 +101,18 @@ Container nelderMead(
         const double rho = -0.5,   // contraction factor
         const double sigma = 0.5 ) // reduction factor
 {
-    assert( !swarm.empty() );
+    CU_ASSERT_THROW( !swarm.empty(),
+                     "The array of initial values for the "
+                     "Nelder Mead algorithm is empty." );
     const auto n = swarm.size()-1;
-    assert( n > 0 );
+    CU_ASSERT_THROW( n > 0,
+                     "There must be at least two initial "
+                     "values for the Nelder Mead algorithm." );
     for ( auto & x : swarm )
-        assert( x.size() == n );
+        CU_ASSERT_THROW( x.size() == n,
+                         "The dimensions of the initial values "
+                         "of the Nelder Mead algorithm do not "
+                         "correspond to the swarm size." );
     using Cost = decltype(costFunction(swarm[0]));
     using Rn = typename std::remove_reference<decltype(swarm[0])>::type;
 

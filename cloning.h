@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "exception.h"
+#include "cpp_utils/exception.h"
 #include <memory>
 
 namespace cu {

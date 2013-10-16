@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "concurrent_queue.h"
+#include "cpp_utils/concurrent_queue.h"
 #include <algorithm>
 #include <future>
 #include <thread>

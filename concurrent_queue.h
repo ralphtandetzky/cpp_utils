@@ -9,8 +9,8 @@
 #include <condition_variable>
 #include <list>
 
-#include "locking.h"
-#include "scope_guard.h"
+#include "cpp_utils/locking.h"
+#include "cpp_utils/scope_guard.h"
 
 namespace cu {
 
