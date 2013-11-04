@@ -276,7 +276,7 @@ public:
         passing a functor that does nothing. However, this should normally
         not be necessary. */
     template <typename Func>
-    void modify( Func f );
+    auto modify( Func f ) -> typename std::result_of<Func(T*)>::type;
 
     /// The expression @c p.read(f) is equivalent to @c f(p.get()).
     template <typename Func>
@@ -440,11 +440,13 @@ cow_ptr<T> make_cow( Args&&...args );
 
 // Helper operator for the implementation of COW_MODIFY
 template <typename T, typename Func>
-void operator&=( cow_ptr<T> & p, Func && f );
+auto operator&=( cow_ptr<T> & p, Func && f )
+    -> decltype(p.modify( std::forward<Func>(f) ));
 
 // Helper operator for the implementation of COW_READ
 template <typename T, typename Func>
-void operator&=( const cow_ptr<T> & p, Func && f );
+auto operator&=( const cow_ptr<T> & p, Func && f )
+    -> decltype(p.read( std::forward<Func>(f) ));
 
 // Helper template function for the implementation of COW_READ
 template <typename T>
@@ -518,7 +520,15 @@ cow_ptr<T>::cow_ptr( const cow_ptr & other ) noexcept
     : px(other.px)
     , pn(other.pn)
 {
-    pn->acquire();
+    if ( pn )
+    {
+        assert( px );
+        pn->acquire();
+    }
+    else
+    {
+        assert( !px );
+    }
 }
 
 
@@ -585,10 +595,10 @@ const T * cow_ptr<T>::get() const noexcept
 
 template <typename T>
 template <typename Func>
-void cow_ptr<T>::modify( Func f )
+auto cow_ptr<T>::modify( Func f ) -> typename std::result_of<Func(T*)>::type
 {
     moo();
-    f( px );
+    return f( px );
 }
 
 
@@ -795,16 +805,18 @@ cow_ptr<T> make_cow( Args&&...args )
 
 
 template <typename T, typename Func>
-void operator&=( cow_ptr<T> & p, Func && f )
+auto operator&=( cow_ptr<T> & p, Func && f )
+    -> decltype(p.modify( std::forward<Func>(f) ))
 {
-    p.modify( std::forward<Func>(f) );
+    return p.modify( std::forward<Func>(f) );
 }
 
 
 template <typename T, typename Func>
-void operator&=( const cow_ptr<T> & p, Func && f )
+auto operator&=( const cow_ptr<T> & p, Func && f )
+    -> decltype(p.read( std::forward<Func>(f) ))
 {
-    p.read( std::forward<Func>(f) );
+    return p.read( std::forward<Func>(f) );
 }
 
 
