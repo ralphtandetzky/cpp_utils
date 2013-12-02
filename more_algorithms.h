@@ -30,4 +30,21 @@ T MovingAccumulate (
   return init;
 }
 
+
+template <typename InputIterator1, typename InputIterator2, typename BinOp>
+BinOp for_each( InputIterator1 first1, InputIterator2 last1,
+               InputIterator2 first2, InputIterator2 last2,
+               BinOp op )
+{
+    while ( first1 != last1 )
+    {
+        assert( first2 != last2 );
+        op( *first1, *first2 );
+        ++first1;
+        ++first2;
+    }
+    assert( first2 == last2 );
+    return std::move(op);
+}
+
 } // namespace cu
