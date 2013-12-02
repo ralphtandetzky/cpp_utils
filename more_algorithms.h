@@ -34,7 +34,7 @@ T MovingAccumulate (
 
 
 template <typename InputIterator1, typename InputIterator2, typename BinOp>
-BinOp for_each( InputIterator1 first1, InputIterator2 last1,
+BinOp for_each( InputIterator1 first1, InputIterator1 last1,
                InputIterator2 first2, InputIterator2 last2,
                BinOp op )
 {
