@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include <cassert>
+
 namespace cu {
 
 template <class InputIterator, class T, class BinOp>
