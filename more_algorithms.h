@@ -49,4 +49,14 @@ BinOp for_each( InputIterator1 first1, InputIterator1 last1,
     return std::move(op);
 }
 
+
+template <typename T>
+void nofail_swap( T & lhs, T & rhs )
+{
+    using namespace std;
+    static_assert( noexcept( swap(lhs, rhs) ),
+                   "This swap operation must not throw." );
+    swap(lhs,rhs);
+}
+
 } // namespace cu
