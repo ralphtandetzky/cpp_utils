@@ -36,14 +36,16 @@ public:
     bool tryPop( T & t )
     {
         std::list<T> node;
-        data( [&]( Data & d )
+        const auto success = data( [&]( Data & d ) -> bool
         {
             if ( d.q.empty() )
                 return false;
             node.splice( end(node), d.q, begin(d.q) );
+            return true;
         } );
-        t = std::move( node.front() );
-        return true;
+        if ( success )
+            t = std::move( node.front() );
+        return success;
     }
 
     T pop()
