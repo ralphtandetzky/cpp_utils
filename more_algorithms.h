@@ -6,6 +6,7 @@
 #pragma once
 
 #include <cassert>
+#include <numeric>
 
 namespace cu {
 
@@ -81,6 +82,32 @@ Container trim( const Container & s, F && shallBeTrimmed )
 inline std::string trim( const std::string & s )
 {
     return trim( s, (int(*)(int))std::isspace );
+}
+
+
+inline int levenshteinDistance( const std::string & s, const std::string & t )
+{
+    if ( s == t )    return 0;
+    if ( s.empty() ) return t.size();
+    if ( t.empty() ) return s.size();
+
+    auto v0 = std::vector<size_t>(t.size()+1);
+    auto v1 = v0;
+    std::iota( begin(v0), end(v0), 0 );
+    for ( auto i = size_t{0}; i < s.size(); ++i)
+    {
+        v1[0] = i + 1;
+
+        for ( auto j = size_t{0}; j < t.size(); ++j)
+        {
+            const auto cost = s[i] == t[j] ? 0 : 1;
+            v1[j + 1] = std::min( std::min( v1[j], v0[j + 1] ) + 1,
+                    v0[j] + cost );
+        }
+        v0.swap( v1 );
+    }
+
+    return v0[t.size()];
 }
 
 } // namespace cu
