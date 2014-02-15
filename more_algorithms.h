@@ -10,30 +10,37 @@
 
 namespace cu {
 
+/// \brief Optimized @c std::accumulate() which uses move semantics.
+///
+/// The @c init argument is moved into the binary operation.
 template <class InputIterator, class T, class BinOp>
 T MovingAccumulate (
         InputIterator first, InputIterator last, T init, BinOp binop)
 {
-  while ( first != last ) {
-    init = binop( std::move(init), *first );
-    ++first;
-  }
-  return init;
+    while ( first != last ) {
+        init = binop( std::move(init), *first );
+        ++first;
+    }
+    return init;
 }
 
 
+/// \brief Optimized @c std::accumulate() which uses move semantics.
+///
+/// The @c init argument is moved into the binary @c operator+().
 template <class InputIterator, class T, class BinOp>
 T MovingAccumulate (
         InputIterator first, InputIterator last, T init )
 {
-  while ( first != last ) {
-    init = std::move(init) + *first;
-    ++first;
-  }
-  return init;
+    while ( first != last ) {
+        init = std::move(init) + *first;
+        ++first;
+    }
+    return init;
 }
 
 
+/// Iterator checked implementation of @c std::for_each().
 template <typename InputIterator1, typename InputIterator2, typename BinOp>
 BinOp for_each( InputIterator1 first1, InputIterator1 last1,
                InputIterator2 first2, InputIterator2 last2,
@@ -51,6 +58,7 @@ BinOp for_each( InputIterator1 first1, InputIterator1 last1,
 }
 
 
+/// Like @c std::swap, but guaranteed to never fail.
 template <typename T>
 void nofail_swap( T & lhs, T & rhs )
 {
@@ -85,6 +93,10 @@ inline std::string trim( const std::string & s )
 }
 
 
+/// \brief Calculated the editing distance of two strings.
+///
+/// Returns the number of steps that are necessary to transform the string
+/// @c s into @c t by inserting, deleting and replacing single characters.
 inline int levenshteinDistance( const std::string & s, const std::string & t )
 {
     if ( s == t )    return 0;
