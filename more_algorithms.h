@@ -97,7 +97,8 @@ inline std::string trim( const std::string & s )
 ///
 /// Returns the number of steps that are necessary to transform the string
 /// @c s into @c t by inserting, deleting and replacing single characters.
-inline int levenshteinDistance( const std::string & s, const std::string & t )
+inline size_t levenshteinDistance( const std::string & s,
+                                   const std::string & t )
 {
     if ( s == t )    return 0;
     if ( s.empty() ) return t.size();
