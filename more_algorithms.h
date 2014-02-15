@@ -59,4 +59,28 @@ void nofail_swap( T & lhs, T & rhs )
     swap(lhs,rhs);
 }
 
+
+/// \brief Removes certain elements from a beginning and end of a container.
+///
+/// Typically, an @c std::string is trimmed of whitespace characters. For
+/// this purpose the overload taking an std::string is especially provided.
+template <typename Container, typename F>
+Container trim( const Container & s, F && shallBeTrimmed )
+{
+    auto first = begin(s);
+    auto last = end(s);
+
+    while ( first != last && shallBeTrimmed(*first) )
+        ++first;
+    while ( last != first && shallBeTrimmed(*std::prev(last)) )
+        --last; // NOOP
+
+    return std::string( first, last );
+}
+
+inline std::string trim( const std::string & s )
+{
+    return trim( s, (int(*)(int))std::isspace );
+}
+
 } // namespace cu
