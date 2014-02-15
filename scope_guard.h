@@ -27,7 +27,7 @@ class ScopeGuard
 {
 public:
     ScopeGuard( F && f ) : f( std::forward<F>(f) ) {}
-    ~ScopeGuard()
+    ~ScopeGuard() noexcept(false)
     {
         switch (E)
         {
