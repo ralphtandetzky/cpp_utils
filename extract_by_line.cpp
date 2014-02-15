@@ -12,8 +12,7 @@ std::vector<std::string> extractByLine( std::istream & is )
 try
 {
     const auto oldExceptions = is.exceptions();
-    is.exceptions( std::istream::badbit |
-                   std::istream::failbit );
+    is.exceptions( std::istream::badbit );
     // restore exception flags upon exit.
     SCOPE_EXIT {
         try
@@ -31,10 +30,16 @@ try
     std::string line;
     for (;;) // ever
     {
+        assert( is.good() );
         std::getline( is, line ); // may throw
         lines.push_back( line );
         if ( is.eof() )
             return lines;
+        else if ( is.fail() )
+        {
+            is.exceptions( std::istream::failbit ); // always throws.
+            assert( false );
+        }
     }
 }
 catch (...)
