@@ -40,11 +40,28 @@ T MovingAccumulate (
 }
 
 
+template <typename T, typename InputIterator1, typename InputIterator2>
+T innerProduct( InputIterator1 first1, InputIterator1 last1,
+                InputIterator2 first2, InputIterator2 last2,
+                T startValue )
+{
+    while ( first1 != last1 )
+    {
+        assert( first2 != last2 );
+        startValue += *first1 * *first2;
+        ++first1;
+        ++first2;
+    }
+    assert( first2 == last2 );
+    return startValue;
+}
+
+
 /// Iterator checked implementation of @c std::for_each().
 template <typename InputIterator1, typename InputIterator2, typename BinOp>
 BinOp for_each( InputIterator1 first1, InputIterator1 last1,
-               InputIterator2 first2, InputIterator2 last2,
-               BinOp op )
+                InputIterator2 first2, InputIterator2 last2,
+                BinOp op )
 {
     while ( first1 != last1 )
     {
