@@ -5,55 +5,17 @@
 
 #pragma once
 
+#include <algorithm>
 #include <cassert>
 #include <numeric>
 
 namespace cu {
 
-/// \brief Optimized @c std::accumulate() which uses move semantics.
-///
-/// The @c init argument is moved into the binary operation.
-template <class InputIterator, class T, class BinOp>
-T MovingAccumulate (
-        InputIterator first, InputIterator last, T init, BinOp binop)
+/// \brief Calculates the square of a value.
+template <typename T>
+auto sqr( const T & t ) -> decltype(t*t)
 {
-    while ( first != last ) {
-        init = binop( std::move(init), *first );
-        ++first;
-    }
-    return init;
-}
-
-
-/// \brief Optimized @c std::accumulate() which uses move semantics.
-///
-/// The @c init argument is moved into the binary @c operator+().
-template <class InputIterator, class T, class BinOp>
-T MovingAccumulate (
-        InputIterator first, InputIterator last, T init )
-{
-    while ( first != last ) {
-        init = std::move(init) + *first;
-        ++first;
-    }
-    return init;
-}
-
-
-template <typename T, typename InputIterator1, typename InputIterator2>
-T innerProduct( InputIterator1 first1, InputIterator1 last1,
-                InputIterator2 first2, InputIterator2 last2,
-                T startValue )
-{
-    while ( first1 != last1 )
-    {
-        assert( first2 != last2 );
-        startValue += *first1 * *first2;
-        ++first1;
-        ++first2;
-    }
-    assert( first2 == last2 );
-    return startValue;
+    return t*t;
 }
 
 
@@ -72,6 +34,146 @@ BinOp for_each( InputIterator1 first1, InputIterator1 last1,
     }
     assert( first2 == last2 );
     return std::move(op);
+}
+
+
+/// \brief Optimized @c std::accumulate() which uses move semantics.
+///
+/// The @c init argument is moved into the binary operation.
+template <class InputIterator, class T, class BinOp>
+T movingAccumulate (
+        InputIterator first, InputIterator last, T init, BinOp binop)
+{
+    while ( first != last ) {
+        init = binop( std::move(init), *first );
+        ++first;
+    }
+    return init;
+}
+
+
+/// \brief Optimized @c std::accumulate() which uses move semantics.
+///
+/// The @c init argument is moved into the binary @c operator+().
+template <class InputIterator, class T, class BinOp>
+T movingAccumulate (
+        InputIterator first, InputIterator last, T init )
+{
+    while ( first != last ) {
+        init = std::move(init) + *first;
+        ++first;
+    }
+    return init;
+}
+
+
+/// \brief Calculates range1 += factor * range2.
+template <typename T, typename InputIterator1, typename InputIterator2>
+void addAssign( InputIterator1 first1, InputIterator1 last1, T factor,
+                InputIterator2 first2, InputIterator2 last2 )
+{
+    if ( factor == 1 )
+        for_each( first1, last1, first2, last2,
+                  []( T & x, const T & y ){ x += y; } );
+    else if ( factor == -1 )
+        for_each( first1, last1, first2, last2,
+                  []( T & x, const T & y ){ x -= y; } );
+    else
+        for_each( first1, last1, first2, last2,
+                  [factor]( T & x, const T & y ){ x += factor * y; } );
+}
+
+
+/// \brief Calculates range1 -= factor * range2.
+template <typename T, typename InputIterator1, typename InputIterator2>
+void subAssign( InputIterator1 first1, InputIterator1 last1, T factor,
+                InputIterator2 first2, InputIterator2 last2 )
+{
+    return addAssign( first1, last1, -factor, first2, last2 );
+}
+
+
+/// Multiplies all elements of a range with a factor.
+template <typename T, typename InputIterator>
+void mulAssign( InputIterator first, InputIterator last, T factor )
+{
+    std::for_each( first, last, [factor]( T & x ){ x*=factor; } );
+}
+
+
+/// Divides all elements of a range by a constant.
+template <typename T, typename InputIterator>
+void divAssign( InputIterator first, InputIterator last, T t )
+{
+    return mulAssign( first, last, 1/t );
+}
+
+
+/// \brief Calculated the inner product of two ranges.
+///
+/// \pre The ranges must be equally long.
+template <typename T, typename InputIterator1, typename InputIterator2>
+T innerProduct( InputIterator1 first1, InputIterator1 last1,
+                InputIterator2 first2, InputIterator2 last2,
+                T startValue )
+{
+    while ( first1 != last1 )
+    {
+        assert( first2 != last2 );
+        startValue += *first1 * *first2;
+        ++first1;
+        ++first2;
+    }
+    assert( first2 == last2 );
+    return startValue;
+}
+
+
+/// \brief Calculates the l_2 norm of a range.
+template <typename T, typename InputIterator>
+T squareNorm( InputIterator first, InputIterator last, T startValue )
+{
+    while ( first != last )
+    {
+        startValue += sqr(*first);
+        ++first;
+    }
+
+    return startValue;
+}
+
+
+template <typename T>
+std::vector<std::vector<T> > gramSchmidtProcess(
+        std::vector<std::vector<T>> matrix )
+{
+    if ( matrix.empty() )
+        return matrix;
+
+    const auto m = matrix.size();
+    const auto n = matrix.front().size();
+
+    assert( m < n );
+
+    for ( auto i = size_t{0}; i < m; ++i )
+    {
+        auto & mi = matrix[i];
+        assert( mi.size() == n );
+        for ( auto j = size_t{0}; j < i; ++j )
+        {
+            const auto & mj = matrix[j];
+            const auto prod = cu::innerProduct(
+                    begin(mi), end(mi),
+                    begin(mj), end(mj), T{} );
+            subAssign( begin(mi), end(mi), prod,
+                       begin(mj), end(mj) );
+        }
+        const auto norm2 = cu::squareNorm( begin(mi), end(mi), T{} );
+        if ( norm2 == T{} )
+            continue;
+        cu::divAssign( begin(mi), end(mi), sqrt(norm2) );
+    }
+    return matrix;
 }
 
 
