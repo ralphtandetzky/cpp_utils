@@ -143,6 +143,17 @@ T squareNorm( InputIterator first, InputIterator last, T startValue )
 }
 
 
+/// \brief Returns an orthonormal base that spans the same space as
+/// the vectors in the input matrix, if the input vectors are linearly
+/// independent.
+///
+/// If the input vectors are not linearly independent, then some vectors
+/// of the result matrix will be zero. The same space will be spanned then,
+/// but the vectors are not normed.
+///
+/// It is asserted that the length of all input vectors is the same.
+/// It is also asserted that the number of vectors is at most the length
+/// of the given vectors.
 template <typename T>
 std::vector<std::vector<T> > gramSchmidtProcess(
         std::vector<std::vector<T>> matrix )
@@ -153,7 +164,7 @@ std::vector<std::vector<T> > gramSchmidtProcess(
     const auto m = matrix.size();
     const auto n = matrix.front().size();
 
-    assert( m < n );
+    assert( m <= n );
 
     for ( auto i = size_t{0}; i < m; ++i )
     {
