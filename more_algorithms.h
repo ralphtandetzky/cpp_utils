@@ -253,4 +253,27 @@ inline size_t levenshteinDistance( const std::string & s,
     return v0[t.size()];
 }
 
+
+template <typename ForwardIt1, typename ForwardIt2>
+ForwardIt2 findBoyerMoore( ForwardIt1 firstNeedle,
+                           ForwardIt1 lastNeedle,
+                           ForwardIt2 firstHaystack,
+                           ForwardIt2 lastHaystack )
+{
+    while ( firstHaystack != lastHaystack )
+    {
+        auto it1 = firstNeedle;
+        auto it2 = firstHaystack;
+        while ( *it1 == *it2 && it1 != lastNeedle && it2 != lastHaystack  )
+        {
+            ++it1;
+            ++it2;
+        }
+        if ( it1 == lastNeedle )
+            return firstHaystack;
+        ++firstHaystack;
+    }
+    return lastHaystack;
+}
+
 } // namespace cu
