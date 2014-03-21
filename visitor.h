@@ -14,23 +14,36 @@ namespace cu {
  **********************************/
 
 template <typename ...T>
+struct Visitor;
+
+
+template <typename T>
+struct Visitor<T>
+{
+    virtual ~Visitor() {}
+	virtual void visit( T & t ) = 0;
+
+protected:
+    template <typename F>
+    struct Impl;
+};
+
+template <typename T>
+template <typename F>
+struct Visitor<T>::Impl : virtual Visitor<T>
+{
+   void visit( T & t ) override { getFunctor()( t ); }
+private:
+   virtual F & getFunctor() = 0;
+};
+
+template <typename ...T>
 struct Visitor : virtual Visitor<T>...
 {
     typedef Visitor<const T...> ConstVisitor;
 
     template <typename F>
-    struct Impl : Visitor, Visitor<T>::template Impl<F>...
-    {
-        template <typename...Args>
-        explicit Impl( Args&&...args ) : f(std::forward<Args>(args)...) {}
-        Impl( Impl & other ) : Impl( const_cast<const Impl&>(other) ) {}
-        Impl( Impl && ) = default;
-        Impl( const Impl & ) = default;
-        Impl( const Impl && other ) : Impl( static_cast<const Impl&>(other) ) {}
-    private:
-        F & getFunctor() override { return f; }
-        F f;
-    };
+    struct Impl;
 
     template <typename F>
     static Impl<F> make_Impl( F f )
@@ -64,20 +77,19 @@ struct Visitor : virtual Visitor<T>...
     };
 };
 
-template <typename T>
-struct Visitor<T>
+template <typename ...T>
+template <typename F>
+struct Visitor<T...>::Impl : Visitor, Visitor<T>::template Impl<F>...
 {
-    virtual ~Visitor() {}
-	virtual void visit( T & t ) = 0;
-
-protected:
-    template <typename F>
-    struct Impl : virtual Visitor<T>
-    {
-        void visit( T & t ) override { getFunctor()( t ); }
-    private:
-        virtual F & getFunctor() = 0;
-    };
+    template <typename...Args>
+    explicit Impl( Args&&...args ) : f(std::forward<Args>(args)...) {}
+    Impl( Impl & other ) : Impl( const_cast<const Impl&>(other) ) {}
+    Impl( Impl && ) = default;
+    Impl( const Impl & ) = default;
+    Impl( const Impl && other ) : Impl( static_cast<const Impl&>(other) ) {}
+private:
+    F & getFunctor() override { return f; }
+    F f;
 };
 
 
@@ -122,12 +134,16 @@ struct AcyclicVisitor<T> : virtual AcyclicVisitorInterface
     virtual void visit( T & ) = 0;
 
     template <typename F>
-    struct Impl : virtual AcyclicVisitor
-    {
-        void visit( T & t ) override { getFunctor()(t); }
-    private:
-        virtual F & getFunctor() = 0;
-    };
+    struct Impl;
+};
+
+template <typename T>
+template <typename F>
+struct AcyclicVisitor<T>::Impl : virtual AcyclicVisitor
+{
+    void visit( T & t ) override { getFunctor()(t); }
+private:
+    virtual F & getFunctor() = 0;
 };
 
 struct AcyclicVisitableInterface
