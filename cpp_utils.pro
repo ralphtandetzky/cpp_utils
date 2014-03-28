@@ -1,37 +1,35 @@
-#-------------------------------------------------
-#
-# Project created by QtCreator 2013-07-19T16:31:00
-#
-#-------------------------------------------------
+QMAKE_CXXFLAGS += -std=c++11 -pedantic
 
-QT       -= core gui
-
-QMAKE_CXXFLAGS += -std=c++0x
-
-TARGET = cpp_utils
 TEMPLATE = lib
+CONFIG += staticlib
+DEPENDPATH += .
+INCLUDEPATH += . ..
 
-DEFINES += CPP_UTILS_LIBRARY
-
-SOURCES +=
-	bwt.cpp
-
-HEADERS += \
-    std_make_unique.h \
-    virtual_call.h \
-    sqr.h \
-    concurrent_queue.h \
-    scope_guard.h \
-    parallel_executor.h \
-    spin_lock.h \
-    locking.h \
-    bwt.h
-
-unix:!symbian {
-    maemo5 {
-        target.path = /opt/usr/lib
-    } else {
-        target.path = /usr/lib
-    }
-    INSTALLS += target
-}
+# Input
+HEADERS += bwt.h \
+           cloning.h \
+           concurrent_queue.h \
+           cow_map.h \
+           cow_ptr.h \
+           exception.h \
+           exception_handling.h \
+           extract_by_line.h \
+           formula_parser.h \
+           locking.h \
+           math_constants.h \
+           more_algorithms.h \
+           optimize.h \
+           parallel_executor.h \
+           scope_guard.h \
+           spin_lock.h \
+           std_make_unique.h \
+           user_parameter.h \
+           user_parameter_container.h \
+           value_ptr.h \
+           virtual_call.h \
+           visitor.h
+SOURCES += bwt.cpp \
+           extract_by_line.cpp \
+           formula_parser.cpp \
+           user_parameter.cpp \
+           user_parameter_container.cpp
