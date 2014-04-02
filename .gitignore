@@ -20,3 +20,5 @@
 *.a
 
 Makefile
+*.prl
+
