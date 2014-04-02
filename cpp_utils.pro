@@ -1,10 +1,11 @@
-QT -= core gui
+QT       -= core gui
+
 QMAKE_CXXFLAGS += -std=c++11 -pedantic
 
 TEMPLATE = lib
-CONFIG += staticlib
+CONFIG += staticlib create_prl c++11
 DEPENDPATH += .
-INCLUDEPATH += . ..
+INCLUDEPATH += ..
 
 # Input
 HEADERS += bwt.h \
@@ -28,9 +29,14 @@ HEADERS += bwt.h \
            user_parameter_container.h \
            value_ptr.h \
            virtual_call.h \
-           visitor.h
+           visitor.h \
+
 SOURCES += bwt.cpp \
            extract_by_line.cpp \
            formula_parser.cpp \
            user_parameter.cpp \
-           user_parameter_container.cpp
+           user_parameter_container.cpp \
+
+LIBS += -L/usr/lib/ -lopencv_core -lopencv_imgproc -lopencv_highgui \
+
+
