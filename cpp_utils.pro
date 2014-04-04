@@ -36,7 +36,3 @@ SOURCES += bwt.cpp \
            formula_parser.cpp \
            user_parameter.cpp \
            user_parameter_container.cpp \
-
-LIBS += -L/usr/lib/ -lopencv_core -lopencv_imgproc -lopencv_highgui \
-
-
