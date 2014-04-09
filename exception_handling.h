@@ -13,6 +13,26 @@
 
 namespace cu {
 
+#define CU_SWALLOW_ALL_EXCEPTIONS_FROM \
+    ::cu::exception_detail::ExceptionSwallowImpl() += [&]
+
+namespace exception_detail
+{
+    struct ExceptionSwallowImpl
+    {
+        template <typename F>
+        void operator+=( F && f ) const
+        {
+            try
+            {
+                f();
+            }
+            catch( ... )
+            {
+            }
+        }
+    };
+}
 
 std::vector<std::exception_ptr> getExceptionChain( std::exception_ptr p )
 {
