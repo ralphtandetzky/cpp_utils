@@ -14,7 +14,7 @@ try
     const auto oldExceptions = is.exceptions();
     is.exceptions( std::istream::badbit );
     // restore exception flags upon exit.
-    SCOPE_EXIT {
+    CU_SCOPE_EXIT {
         try
         {
             is.exceptions( oldExceptions );

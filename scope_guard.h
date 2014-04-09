@@ -7,11 +7,14 @@
 
 #include <cassert>
 
-#define SCOPE_EXIT    SCOPE_IMPL( ScopeGuardExitType::any     )
-#define SCOPE_FAIL    SCOPE_IMPL( ScopeGuardExitType::fail    )
-#define SCOPE_SUCCESS SCOPE_IMPL( ScopeGuardExitType::success )
-#define SCOPE_IMPL(exitType) \
-    auto guard ## __LINE__ = ScopeGuardImpl<exitType>() += [&]()
+#define CU_SCOPE_EXIT    CU_SCOPE_IMPL( ::cu::ScopeGuardExitType::any     )
+#define CU_SCOPE_FAIL    CU_SCOPE_IMPL( ::cu::ScopeGuardExitType::fail    )
+#define CU_SCOPE_SUCCESS CU_SCOPE_IMPL( ::cu::ScopeGuardExitType::success )
+#define CU_SCOPE_IMPL(exitType) \
+    auto CU_CONCATENATE_TOKENS( guard, __LINE__ ) = ::cu::ScopeGuardImpl<exitType>() += [&]()
+#define CU_CONCATENATE_TOKENS( x, y ) CU_CONCATENATE_TOKENS2( x, y )
+#define CU_CONCATENATE_TOKENS2( x, y ) x ## y
+
 
 namespace cu {
 
