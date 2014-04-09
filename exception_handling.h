@@ -34,7 +34,7 @@ namespace exception_detail
     };
 }
 
-std::vector<std::exception_ptr> getExceptionChain( std::exception_ptr p )
+inline std::vector<std::exception_ptr> getExceptionChain( std::exception_ptr p )
 {
     std::vector<std::exception_ptr> ptrs;
     while ( p != std::exception_ptr() )
@@ -82,7 +82,7 @@ typename std::common_type<typename std::result_of<F1(E&)>::type,Ret>::type
 }
 
 /// @pre @c p must not be a nullptr.
-std::string getWhat( std::exception_ptr p )
+inline std::string getWhat( std::exception_ptr p )
 {
     return applyToException<std::string,std::exception>(
                 p,
@@ -92,7 +92,7 @@ std::string getWhat( std::exception_ptr p )
 }
 
 /// @pre @c p must not be a nullptr.
-ThrowSiteInfo getThrowSiteInfo( std::exception_ptr p )
+inline ThrowSiteInfo getThrowSiteInfo( std::exception_ptr p )
 {
     return applyToException<ThrowSiteInfo,Exception>(
                 p,
@@ -113,18 +113,18 @@ bool isExceptionType( std::exception_ptr p )
 }
 
 /// @pre @c p must not be a nullptr.
-bool isUserCancelledException( std::exception_ptr p )
+inline bool isUserCancelledException( std::exception_ptr p )
 {
     return isExceptionType<UserCancelledException>( p );
 }
 
 /// @pre @c p must not be a nullptr.
-bool isInternalError( std::exception_ptr p )
+inline bool isInternalError( std::exception_ptr p )
 {
     return isExceptionType<InternalError>( p );
 }
 
-std::vector<std::string> getWhatChain(
+inline std::vector<std::string> getWhatChain(
         const std::vector<std::exception_ptr> & ptrs )
 {
     std::vector<std::string> whats;
@@ -133,7 +133,7 @@ std::vector<std::string> getWhatChain(
     return whats;
 }
 
-std::vector<ThrowSiteInfo> getThrowSiteInfoChain(
+inline std::vector<ThrowSiteInfo> getThrowSiteInfoChain(
         const std::vector<std::exception_ptr> & ptrs )
 {
     std::vector<ThrowSiteInfo> tsis;
@@ -142,7 +142,7 @@ std::vector<ThrowSiteInfo> getThrowSiteInfoChain(
     return tsis;
 }
 
-bool hasUserCancelledException(
+inline bool hasUserCancelledException(
         const std::vector<std::exception_ptr> & ptrs )
 {
     return std::any_of( begin(ptrs), end(ptrs),
