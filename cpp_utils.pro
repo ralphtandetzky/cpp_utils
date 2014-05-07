@@ -30,6 +30,8 @@ HEADERS += bwt.h \
            value_ptr.h \
            virtual_call.h \
            visitor.h \
+    progress.h \
+    progress_interface.h
 
 SOURCES += bwt.cpp \
            extract_by_line.cpp \
