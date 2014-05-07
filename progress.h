@@ -7,6 +7,8 @@
 
 #include "progress_interface.h"
 
+#include <cassert>
+
 namespace cu {
 
 class PartialProgress final : public ProgressInterface
@@ -42,7 +44,7 @@ private:
 class ProgressForwarder final : public ProgressInterface
 {
 public:
-    PartialProgress( ProgressInterface * parent )
+    ProgressForwarder( ProgressInterface * parent )
         : parent(parent)
     {}
 
