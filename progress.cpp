@@ -61,7 +61,7 @@ public:
                 --sortedIndex;
             }
             const auto nWorkers = impl->nWorkers;
-            if ( (nTasks - sortedIndex) % nWorkers != 0 )
+            if ( (nTasks - sortedIndex) % nWorkers != 1 && nWorkers != 1 )
                 return;
             const auto nTotalChunks      = (nTasks + nWorkers-1 ) / nWorkers;
             const auto nIncompleteChunks = (nTasks - sortedIndex) / nWorkers + 1;
