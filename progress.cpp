@@ -51,14 +51,14 @@ public:
             progressVals[index] = progress;
             const auto nTasks = progressVals.size();
             auto sortedIndex = inverse[index];
-            while ( sortedIndex < nTasks-1 &&
-                    progress > progressVals[mapping[sortedIndex+1]] )
+            while ( sortedIndex > 0 &&
+                    progress > progressVals[mapping[sortedIndex-1]] )
             {
                 using namespace std;
                 swap( inverse[mapping[sortedIndex]],
-                      inverse[mapping[sortedIndex+1]] );
-                swap( mapping[sortedIndex], mapping[sortedIndex+1] );
-                ++sortedIndex;
+                      inverse[mapping[sortedIndex-1]] );
+                swap( mapping[sortedIndex], mapping[sortedIndex-1] );
+                --sortedIndex;
             }
             const auto nWorkers = impl->nWorkers;
             if ( (nTasks - sortedIndex) % nWorkers != 0 )
@@ -108,8 +108,10 @@ ParallelProgress::ParallelProgress(
 {
 }
 
+ParallelProgress::~ParallelProgress() = default;
+
 ProgressInterface & ParallelProgress::getTaskProgressInterface(
-        size_t taskIndex )
+        size_t taskIndex ) const
 {
     return m->progressInterfaces[taskIndex];
 }

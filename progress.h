@@ -75,8 +75,9 @@ public:
             ProgressInterface & parent,
             size_t nTasks,
             size_t nWorkers );
+    ~ParallelProgress();
 
-    ProgressInterface & getTaskProgressInterface( size_t taskIndex );
+    ProgressInterface & getTaskProgressInterface( size_t taskIndex ) const;
 
 private:
     struct Impl;
