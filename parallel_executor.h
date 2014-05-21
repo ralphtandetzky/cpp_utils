@@ -36,15 +36,20 @@ public:
     template <typename F>
     auto addTask( F && f ) -> std::future<decltype(f())>
     {
-        auto task = std::make_shared<std::packaged_task<decltype(f())()>>(
+        auto task = std::make_shared<std::packaged_task<decltype(f())()> >(
             std::forward<F>(f) );
         auto result = task->get_future();
         q.emplace( [=](){ (*task)(); } );
         return result;
     }
 
+    size_t getNWorkers() const
+    {
+        return threads.size();
+    }
+
 private:
-    ConcurrentQueue<std::packaged_task<void()>> q;
+    ConcurrentQueue<std::packaged_task<void()> > q;
     std::atomic<bool> done;
     std::vector<std::thread> threads;
 };
