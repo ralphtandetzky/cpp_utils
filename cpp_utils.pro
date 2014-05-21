@@ -39,3 +39,4 @@ SOURCES += bwt.cpp \
            formula_parser.cpp \
            user_parameter.cpp \
            user_parameter_container.cpp \
+    progress.cpp

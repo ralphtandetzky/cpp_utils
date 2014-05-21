@@ -8,6 +8,8 @@
 #include "progress_interface.h"
 
 #include <cassert>
+#include <cstddef>
+#include <memory>
 
 namespace cu {
 
@@ -63,6 +65,22 @@ public:
 
 private:
     ProgressInterface * const parent;
+};
+
+
+class ParallelProgress
+{
+public:
+    ParallelProgress(
+            ProgressInterface & parent,
+            size_t nTasks,
+            size_t nWorkers );
+
+    ProgressInterface & getTaskProgressInterface( size_t taskIndex );
+
+private:
+    struct Impl;
+    std::unique_ptr<Impl> m;
 };
 
 } // namespace cu
