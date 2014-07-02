@@ -14,11 +14,11 @@
 
 namespace cu {
 
-/** @brief This class implements a concurrent queue that is especially suitable as 
-    event or task queue.
-
-    All member functions of this class are atomic except constructors and destructors 
-    which must be synchronized properly. */
+/// @brief This class implements a concurrent queue that is especially suitable as 
+/// event or task queue.
+///
+/// All member functions of this class are atomic except constructors and destructors 
+/// which must be synchronized properly.
 template <typename T>
 class ConcurrentQueue
 {
