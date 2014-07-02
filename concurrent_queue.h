@@ -14,10 +14,17 @@
 
 namespace cu {
 
+/** @brief This class implements a concurrent queue that is especially suitable as 
+    event or task queue.
+
+    All member functions of this class are atomic except constructors and destructors 
+    which must be synchronized properly. */
 template <typename T>
 class ConcurrentQueue
 {
 public:
+    /// Constructs an element of type T with the given constructor arguments and puts 
+    /// it at the end of the queue.
     template <typename ...Args>
     void emplace( Args&&...args )
     {
@@ -30,9 +37,16 @@ public:
         } );
     }
 
+    /// Pushes a copy of the argument to the end of the queue.
     void push( const T &  t ) { emplace(           t  ); }
+    /// Moves an element to the end of the queue.
     void push(       T && t ) { emplace( std::move(t) ); }
 
+    /// Tries to remove an element from the queue. If the queue is not empty, then
+    /// the element will be moved to the passed reference and @c true will be returned.
+    /// If the queue is empty then @c false is returned in order to indicate failure.
+    /// Even though this function can indicate an empty queue through its return value, 
+    /// this function may throw, if other errors occur. 
     bool tryPop( T & t )
     {
         std::list<T> node;
@@ -48,6 +62,8 @@ public:
         return success;
     }
 
+    /// Returns the first element in the queue. If the queue is empty, this function 
+    /// will block until an element is pushed to the queue. 
     T pop()
     {
         std::list<T> node;
