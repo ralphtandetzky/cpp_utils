@@ -13,9 +13,21 @@
 
 namespace cu {
 
+/// @brief Implements a thread pool. Tasks can easily be added to a task queue.
+///
+/// This class is best suited for implementing parallel algorithms that use
+/// independent tasks. 
+///
+/// The number of threads is immutable during the life-time of the object. 
+/// The destructor waits for all tasks to be finished and closes down all 
+/// threads. 
+///
+/// Thread-safety: All functions in this class are thread-safe.
 class ParallelExecutor
 {
 public:
+    /// Starts the worker threads. The number of threads used is passed. If 
+    /// @c 0 is passed, then the number of cpu cored will be used instead.
     explicit ParallelExecutor( size_t nThreads = 0 )
         : done(false)
     {
@@ -25,6 +37,8 @@ public:
             threads.emplace_back( [=]() { while ( !done ) q.pop()(); });
     }
 
+    /// Waits for all tasks to finish and shuts down all the worker 
+    /// threads. 
     ~ParallelExecutor()
     {
         for ( size_t i = 0; i < threads.size(); ++i )
@@ -33,6 +47,8 @@ public:
                        std::mem_fn(&std::thread::join) );
     }
 
+    /// Pushes a task to the task queue and returns a future though which 
+    /// the result of the calculation can later be retrieved. 
     template <typename F>
     auto addTask( F && f ) -> std::future<decltype(f())>
     {
@@ -43,6 +59,7 @@ public:
         return result;
     }
 
+    /// Returns the total number of worker threads. 
     size_t getNWorkers() const
     {
         return threads.size();
