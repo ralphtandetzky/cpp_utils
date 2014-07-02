@@ -16,7 +16,8 @@ namespace cu {
 /// @brief Implements a thread pool. Tasks can easily be added to a task queue.
 ///
 /// This class is best suited for implementing parallel algorithms that use
-/// independent tasks. 
+/// independent tasks. It can also be used as a background worker thread by
+/// specifying the number of threads to be @c 1 at construction. 
 ///
 /// The number of threads is immutable during the life-time of the object. 
 /// The destructor waits for all tasks to be finished and closes down all 
@@ -47,8 +48,14 @@ public:
                        std::mem_fn(&std::thread::join) );
     }
 
-    /// Pushes a task to the task queue and returns a future though which 
+    /// Pushes a task to the task queue and returns a future through which 
     /// the result of the calculation can later be retrieved. 
+    ///
+    /// @warning It is not safe to let a task wait another task that shall 
+    /// be started later. This may result in dead-lock, if all tasks
+    /// wait for other tasks to do something. Hence tasks should never 
+    /// depend on other tasks other than tasks that have been added to the
+    /// task queue before them.
     template <typename F>
     auto addTask( F && f ) -> std::future<decltype(f())>
     {
