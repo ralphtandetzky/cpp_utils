@@ -6,17 +6,17 @@
 #pragma once
 
 #include <cassert>
+#include "macros.h"
 
-#define CU_SCOPE_EXIT    CU_SCOPE_IMPL( ::cu::ScopeGuardExitType::any     )
-#define CU_SCOPE_FAIL    CU_SCOPE_IMPL( ::cu::ScopeGuardExitType::fail    )
-#define CU_SCOPE_SUCCESS CU_SCOPE_IMPL( ::cu::ScopeGuardExitType::success )
+#define CU_SCOPE_EXIT    CU_SCOPE_IMPL( ::cu::detail::ScopeGuardExitType::any     )
+#define CU_SCOPE_FAIL    CU_SCOPE_IMPL( ::cu::detail::ScopeGuardExitType::fail    )
+#define CU_SCOPE_SUCCESS CU_SCOPE_IMPL( ::cu::detail::ScopeGuardExitType::success )
 #define CU_SCOPE_IMPL(exitType) \
-    auto CU_CONCATENATE_TOKENS( guard, __LINE__ ) = ::cu::ScopeGuardImpl<exitType>() += [&]()
-#define CU_CONCATENATE_TOKENS( x, y ) CU_CONCATENATE_TOKENS2( x, y )
-#define CU_CONCATENATE_TOKENS2( x, y ) x ## y
-
+    auto CU_UNIQUE_IDENTIFIER = ::cu::detail::ScopeGuardImpl<exitType>() += [&]()
 
 namespace cu {
+
+namespace detail {
 
 enum class ScopeGuardExitType
 {
@@ -29,7 +29,7 @@ template <typename F, ScopeGuardExitType E>
 class ScopeGuard
 {
 public:
-    ScopeGuard( F && f ) : f( std::forward<F>(f) ) {}
+    explicit ScopeGuard( F && f ) : f( std::forward<F>(f) ) {}
     ~ScopeGuard() noexcept(false)
     {
         switch (E)
@@ -64,4 +64,5 @@ struct ScopeGuardImpl
     }
 };
 
+} // namespace detail
 } // namespace cu
