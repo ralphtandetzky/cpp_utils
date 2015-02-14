@@ -23,11 +23,41 @@ protected:
 
 
 template <typename ...>
+class VirtualCallAndConstCall;
+
+template <typename Ret, typename ...Args>
+class VirtualCallAndConstCall<Ret(Args...)>
+        : public VirtualCall<Ret(Args...)>
+{
+public:
+    virtual Ret operator()( Args &&... args ) const = 0;
+
+protected:
+    ~VirtualCallAndConstCall() {}
+};
+
+
+
+template <typename F, template ...Args>
+struct Invokable {
+    template <typename U = F>
+    static auto test(int) ->
+        decltype(std::declval<typename std::result_of<F(Args...)>::type>(), std::true_type());
+
+    static auto test(...) -> false_type;
+
+    static constexpr bool value = decltype(test(0))::value;
+};
+
+
+template <typename ...>
 class VirtualCallImpl;
 
 template <typename Ret, typename ...Args, typename F>
-class VirtualCallImpl<Ret(Args...),F> /*final*/
-    : public VirtualCall<Ret(Args...)>
+class VirtualCallImpl<Ret(Args...),F> final
+    : public std::conditional<Invokable<F const(Args...)>::value,
+        VirtualCallAndConstCall<Ret(Args...)>,
+        VirtualCall<Ret(Args...)>::type
 {
 public:
     VirtualCallImpl( F && f )
