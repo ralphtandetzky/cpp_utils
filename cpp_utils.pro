@@ -33,6 +33,7 @@ HEADERS += bwt.h \
     progress.h \
     progress_interface.h \
     fft.h \
+    debug.h \
     macros.h
 
 SOURCES += bwt.cpp \
@@ -40,4 +41,5 @@ SOURCES += bwt.cpp \
            formula_parser.cpp \
            user_parameter.cpp \
            user_parameter_container.cpp \
-    progress.cpp
+    progress.cpp \
+    debug.cpp
