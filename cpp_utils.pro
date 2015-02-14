@@ -32,7 +32,8 @@ HEADERS += bwt.h \
            visitor.h \
     progress.h \
     progress_interface.h \
-    fft.h
+    fft.h \
+    macros.h
 
 SOURCES += bwt.cpp \
            extract_by_line.cpp \
