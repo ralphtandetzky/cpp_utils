@@ -5,8 +5,8 @@
 
 #pragma once
 
-#include "cpp_utils/exception.h"
-#include "cpp_utils/more_algorithms.h"
+#include "exception.h"
+#include "more_algorithms.h"
 
 #include <cassert>
 #include <random>

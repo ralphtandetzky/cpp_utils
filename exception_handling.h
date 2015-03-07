@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "cpp_utils/exception.h"
+#include "exception.h"
 
 #include <algorithm>
 #include <exception>

@@ -5,8 +5,8 @@
 
 #pragma once
 
-#include "cpp_utils/cow_ptr.h"
-#include "cpp_utils/visitor.h"
+#include "cow_ptr.h"
+#include "visitor.h"
 
 #include <string>
 

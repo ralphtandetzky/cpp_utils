@@ -1,7 +1,7 @@
 #include <cpp_utils/extract_by_line.h>
 
-#include "cpp_utils/exception.h"
-#include "cpp_utils/scope_guard.h"
+#include "exception.h"
+#include "scope_guard.h"
 
 #include <istream>
 

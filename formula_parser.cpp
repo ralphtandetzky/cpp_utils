@@ -1,7 +1,7 @@
 #include "formula_parser.h"
 
-#include "../cpp_utils/math_constants.h"
-#include "../cpp_utils/std_make_unique.h"
+#include "math_constants.h"
+#include "std_make_unique.h"
 
 #include <boost/spirit/include/qi.hpp>
 #include <boost/spirit/include/phoenix.hpp>
