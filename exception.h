@@ -27,6 +27,9 @@
 #define CU_THROW_USER_CANCELLED(msg) \
     CU_THROW_SPECIFIC_EXCEPTION(::cu::UserCancelledException,msg)
 
+#define CU_ENFORCE( cond, msg ) \
+    if ( !(cond) ) CU_THROW( msg );
+
 
 namespace cu {
 
