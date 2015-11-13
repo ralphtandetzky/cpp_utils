@@ -1,3 +1,7 @@
+/** @file Defines the Updater class.
+ * @author Ralph Tandetzky
+ */
+
 #pragma once
 
 #include "monitor.hpp"
@@ -13,7 +17,7 @@ namespace cu
 /// task queue to handle, then it might be desirable to drop some tasks
 /// in order to not jam up the task queue. This class does just that.
 /// If there is already a tasks scheduled and a new one comes in,
-/// then the scheduled task replaced by the new one which will be executed
+/// then the scheduled task is replaced by the new one which will be executed
 /// in its stead.
 template <typename Executor>
 class Updater

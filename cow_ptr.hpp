@@ -1,3 +1,7 @@
+/** @file Defines the copy-on-write pointer template class cu::cow_ptr.
+ * @author Ralph Tandetzky
+ */
+
 #pragma once
 
 #include <atomic>

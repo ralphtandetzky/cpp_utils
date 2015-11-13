@@ -1,3 +1,7 @@
+/** @file Defines the class cu::Concurrent.
+ * @author Ralph Tandetzky
+ */
+
 #pragma once
 
 #include "functors.hpp"
@@ -56,6 +60,8 @@ public:
   {
   }
 
+  /// Waits for all operations to be completed and then destroys the wrapped
+  /// object.
   ~Concurrent()
   {
     // block until all tasks are finished.
