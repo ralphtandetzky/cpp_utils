@@ -6,15 +6,20 @@
 
 QT       -= core gui
 
+TARGET = cpp_utils
+TEMPLATE = lib
+CONFIG += staticlib
+
 SOURCES +=
 
 HEADERS += \
-    $${SOURCE_DIR}/cpp_utils/concurrent.hpp \
-    $${SOURCE_DIR}/cpp_utils/units.hpp \
-    $${SOURCE_DIR}/cpp_utils/concurrent_queue.hpp \
-    $${SOURCE_DIR}/cpp_utils/monitor.hpp \
-    $${SOURCE_DIR}/cpp_utils/task_queue.hpp \
-    $${SOURCE_DIR}/cpp_utils/task_queue_thread.hpp \
-    $${SOURCE_DIR}/cpp_utils/updater.hpp \
-    $${SOURCE_DIR}/cpp_utils/scope_guard.hpp \
-    $${SOURCE_DIR}/cpp_utils/cow_ptr.hpp
+    $$PWD/concurrent.hpp \
+    $$PWD/units.hpp \
+    $$PWD/concurrent_queue.hpp \
+    $$PWD/monitor.hpp \
+    $$PWD/task_queue.hpp \
+    $$PWD/task_queue_thread.hpp \
+    $$PWD/updater.hpp \
+    $$PWD/scope_guard.hpp \
+    $$PWD/cow_ptr.hpp \
+    $$PWD/functors.hpp
