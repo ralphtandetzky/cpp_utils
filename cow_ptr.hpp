@@ -775,14 +775,6 @@ const T & operator*( const cow_ptr<T> & p ) noexcept
 }
 
 
-template <typename T>
-T & operator*( cow_ptr<T> & p )
-{
-    assert( p );
-    return *p.get();
-}
-
-
 template <typename T, typename Y, typename ...Args>
 cow_ptr<T> make_cow( Args&&...args )
 {
