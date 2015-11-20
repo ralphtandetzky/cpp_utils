@@ -22,4 +22,5 @@ HEADERS += \
     $$PWD/updater.hpp \
     $$PWD/scope_guard.hpp \
     $$PWD/cow_ptr.hpp \
-    $$PWD/functors.hpp
+    $$PWD/functors.hpp \
+    $$PWD/meta_programming.hpp
