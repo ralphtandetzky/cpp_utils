@@ -36,6 +36,6 @@
 
 namespace cu {
 
-bool fileExist(const std::string &fileName);
+bool OM_CPP_UTILS_API fileExist(const std::string &fileName);
 
 } // namespace cu
