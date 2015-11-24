@@ -1,15 +1,3 @@
-#-------------------------------------------------
-#
-# Project created by QtCreator 2015-09-16T16:15:51
-#
-#-------------------------------------------------
-
-QT       -= core gui
-
-TARGET = cpp_utils
-TEMPLATE = lib
-CONFIG += staticlib
-
 SOURCES +=
 
 HEADERS += \
