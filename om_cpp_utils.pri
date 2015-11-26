@@ -12,3 +12,4 @@ HEADERS += \
     $$PWD/task_queue_thread.hpp \
     $$PWD/units.hpp \
     $$PWD/updater.hpp \
+    $$PWD/exception.hpp
