@@ -4,6 +4,8 @@ HEADERS += \
     $$PWD/concurrent.hpp \
     $$PWD/concurrent_queue.hpp \
     $$PWD/cow_ptr.hpp \
+    $$PWD/exception.hpp
+    $$PWD/exception_handling.hpp
     $$PWD/functors.hpp \
     $$PWD/meta_programming.hpp \
     $$PWD/monitor.hpp \
@@ -12,4 +14,3 @@ HEADERS += \
     $$PWD/task_queue_thread.hpp \
     $$PWD/units.hpp \
     $$PWD/updater.hpp \
-    $$PWD/exception.hpp

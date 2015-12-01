@@ -48,6 +48,7 @@
 
 #pragma once
 
+#include <cassert>
 #include <exception>
 #include <stdexcept>
 #include <string>
@@ -85,7 +86,7 @@ struct ThrowSiteInfo
 #define CU_THROW_EXCEPTION( msg ) CU_THROW_SPECIFIC_EXCEPTION( msg, ::cu::Exception )
 #define CU_ADD_EXCEPTION_CONTEXT( msg ) \
   CU_ADD_EXCEPTION_CONTEXT_CUSTOM( CU_THROW_EXCEPTION(msg) )
-#define CU_ENSURE( expr, msg ) \
+#define CU_ENFORCE( expr, msg ) \
   if ( !static_cast<bool>(expr) ) { CU_THROW_EXCEPTION( msg ); }
 #define CU_ASSERT_THROW( expr, msg ) \
   if ( !static_cast<bool>(expr) ) { assert(expr); CU_THROW_EXCEPTION( msg ); }
