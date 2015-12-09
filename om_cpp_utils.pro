@@ -42,7 +42,6 @@ CONFIG += console
 
 # what ever you need for Qt ...
 QT += core
-QT += network xml
 QT -= gui
 
 # add all prerequisite libraries here as white space list
@@ -66,7 +65,7 @@ DEFINES +=        $$omEnableExports(OM_CPP_UTILS)
 # omLibIncludes()	adds the local include and library specific includes from OM_LIBS
 # omLibs()              adds the common library pool (-L) and library names (-l) from OM_LIBS
 PRE_TARGETDEPS += $$omDependencies()
-INCLUDEPATH +=  "../"
+INCLUDEPATH +=  ..
 LIBS +=           $$omLibs()
 
 HEADERS += \
