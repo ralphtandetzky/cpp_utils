@@ -81,5 +81,6 @@ HEADERS += \
     task_queue.hpp \
     task_queue_thread.hpp \
     units.hpp \
-    updater.hpp
+    updater.hpp \
+    swap.hpp
 

@@ -146,4 +146,13 @@ bool any_of( Tuple && tuple,
         std::make_index_sequence<tuple_size<Tuple>::value>() );
 }
 
+template <std::size_t N>
+class Rank;
+
+template <>
+class Rank<0> {};
+
+template <std::size_t N>
+class Rank : public Rank<N-1> {};
+
 } // namespace cu
