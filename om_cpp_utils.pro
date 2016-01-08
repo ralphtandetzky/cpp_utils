@@ -75,12 +75,13 @@ HEADERS += \
     exception.hpp \
     exception_handling.hpp \
     functors.hpp \
+    math_helpers.hpp \
     meta_programming.hpp \
     monitor.hpp \
     scope_guard.hpp \
+    swap.hpp \
     task_queue.hpp \
     task_queue_thread.hpp \
     units.hpp \
     updater.hpp \
-    swap.hpp
 
