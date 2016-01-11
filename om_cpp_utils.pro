@@ -75,6 +75,7 @@ HEADERS += \
     exception.hpp \
     exception_handling.hpp \
     functors.hpp \
+    geometry.hpp \
     math_helpers.hpp \
     meta_programming.hpp \
     monitor.hpp \
