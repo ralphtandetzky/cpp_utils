@@ -80,6 +80,7 @@ HEADERS += \
     meta_programming.hpp \
     monitor.hpp \
     scope_guard.hpp \
+    string_helpers.hpp \
     swap.hpp \
     task_queue.hpp \
     task_queue_thread.hpp \
