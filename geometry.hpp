@@ -4,6 +4,7 @@
 
 #include <array>
 #include <cassert>
+#include <tuple>
 
 namespace cu
 {
