@@ -514,7 +514,8 @@ cow_ptr<T>::cow_ptr( const cow_ptr & other ) noexcept
     : px(other.px)
     , pn(other.pn)
 {
-    pn->acquire();
+    if ( pn )
+        pn->acquire();
 }
 
 
