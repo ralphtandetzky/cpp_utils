@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <tuple>
 #include <utility>
 
@@ -65,6 +66,52 @@ void for_each( Tuple1 && tuple1,
         tuple2,
         std::forward<F>(f),
         std::make_index_sequence<tuple_size<Tuple1>::value >() );
+}
+
+
+namespace detail
+{
+
+  template <typename Tuple, typename F, std::size_t ...indexes>
+  decltype(auto) transform_impl( Tuple && tuple,
+                                 F && f,
+                                 std::index_sequence<indexes...> )
+  {
+    return std::make_tuple( f( std::get<indexes>( std::forward<Tuple>(tuple) ) )... );
+  }
+
+} // namespace detail
+
+template <typename Tuple, typename F>
+decltype(auto) transform( Tuple && tuple,
+                          F && f )
+{
+  return detail::transform_impl(
+        std::forward<Tuple>(tuple),
+        std::forward<F>(f),
+        std::make_index_sequence<tuple_size<Tuple>::value>() );
+}
+
+
+namespace detail
+{
+
+  template <typename T, typename Tuple, std::size_t ...indexes>
+  std::array<T,tuple_size<Tuple>::value>
+      to_array_impl( Tuple && tuple,
+                     std::index_sequence<indexes...> )
+  {
+    return { std::get<indexes>( std::forward<Tuple>(tuple))... };
+  }
+
+}
+
+template <typename T, typename Tuple>
+std::array<T,tuple_size<Tuple>::value> to_array( Tuple && tuple )
+{
+  return detail::to_array_impl<T>(
+        std::forward<Tuple>(tuple),
+        std::make_index_sequence<tuple_size<Tuple>::value>() );
 }
 
 
