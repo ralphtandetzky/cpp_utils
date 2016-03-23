@@ -7,16 +7,12 @@
 namespace cu
 {
 
-template <typename>
-struct tuple_size;
-
+/// Returns the size of a tuple as compile-time constant.
 template <typename ...Ts>
-struct tuple_size<std::tuple<Ts...> >
-    : std::integral_constant<std::size_t, sizeof...(Ts)> {};
-
-template <typename T> struct tuple_size<const T   > : tuple_size<T> {};
-template <typename T> struct tuple_size<volatile T> : tuple_size<T> {};
-template <typename T> struct tuple_size<T &       > : tuple_size<T> {};
+constexpr std::size_t get_tuple_size( const std::tuple<Ts...> & )
+{
+  return sizeof...(Ts);
+}
 
 namespace detail
 {
@@ -44,28 +40,45 @@ namespace detail
 
 } // namespace detail
 
+/// Applies a functor to each element of a tuple.
+///
+/// The types of the elements can differ and it still works.
 template <typename Tuple, typename F>
 void for_each( Tuple && tuple, F && f )
 {
   detail::for_each_impl(
-        tuple,
+        std::forward<Tuple>(tuple),
         std::forward<F>(f),
-        std::make_index_sequence<tuple_size<Tuple>::value>() );
+        std::make_index_sequence<get_tuple_size(tuple)>() );
 }
 
+/// Applies a functor to the elements of two tuples.
+///
+/// In effect, the following is called:
+///   @code
+///     f( get< 0 >(std::forward<Tuple1>(tuple1)),
+///        get< 0 >(std::forward<Tuple2>(tuple2)) );
+///         .
+///         .
+///         .
+///     f( get<N-1>(std::forward<Tuple1>(tuple1)),
+///        get<N-1>(std::forward<Tuple2>(tuple2)) );
+///   @endcode
+/// where @c N ist the size of both tuples. Note also, that proper forwarding
+/// is applied to the elements of the tuples.
 template <typename Tuple1, typename Tuple2, typename F>
 void for_each( Tuple1 && tuple1,
                Tuple2 && tuple2,
                F && f )
 {
-  static_assert( tuple_size<Tuple1>::value ==
-                 tuple_size<Tuple2>::value,
+  static_assert( get_tuple_size(tuple1) ==
+                 get_tuple_size(tuple2),
                  "Tuples must have the same length." );
   detail::for_each_impl(
-        tuple1,
-        tuple2,
+        std::forward<Tuple1>(tuple1),
+        std::forward<Tuple2>(tuple2),
         std::forward<F>(f),
-        std::make_index_sequence<tuple_size<Tuple1>::value >() );
+        std::make_index_sequence<get_tuple_size(tuple1) >() );
 }
 
 
@@ -82,6 +95,8 @@ namespace detail
 
 } // namespace detail
 
+/// A functor is applied to every element of a tuple and the returned values
+/// are returned in a tuple.
 template <typename Tuple, typename F>
 decltype(auto) transform( Tuple && tuple,
                           F && f )
@@ -89,7 +104,7 @@ decltype(auto) transform( Tuple && tuple,
   return detail::transform_impl(
         std::forward<Tuple>(tuple),
         std::forward<F>(f),
-        std::make_index_sequence<tuple_size<Tuple>::value>() );
+        std::make_index_sequence<get_tuple_size(tuple)>() );
 }
 
 
@@ -97,21 +112,23 @@ namespace detail
 {
 
   template <typename T, typename Tuple, std::size_t ...indexes>
-  std::array<T,tuple_size<Tuple>::value>
-      to_array_impl( Tuple && tuple,
-                     std::index_sequence<indexes...> )
+  auto to_array_impl( Tuple && tuple, std::index_sequence<indexes...> )
   {
-    return { std::get<indexes>( std::forward<Tuple>(tuple))... };
+    return std::array<T,get_tuple_size(tuple)>{
+      std::get<indexes>( std::forward<Tuple>(tuple))... };
   }
 
 }
 
+/// Turns a tuple into an array.
+///
+/// The element type is not inferred, but must be specified.
 template <typename T, typename Tuple>
-std::array<T,tuple_size<Tuple>::value> to_array( Tuple && tuple )
+auto to_array( Tuple && tuple )
 {
   return detail::to_array_impl<T>(
         std::forward<Tuple>(tuple),
-        std::make_index_sequence<tuple_size<Tuple>::value>() );
+        std::make_index_sequence<get_tuple_size(tuple)>() );
 }
 
 
@@ -148,12 +165,34 @@ namespace detail
                         std::index_sequence<indexes...> )
   {
     // The reverse accumulator is used for left to right associativity.
+    // It must be reverse because elements of an argument pack must be
+    // removed from the front while inferring parameters. In other words,
+    // a template of the form
+    //   @code
+    //     template <typename ...Ts, typename T>
+    //     void f( Ts &&...args, T && arg );
+    //   @endcode
+    // is ill-formed code, while
+    //   @code
+    //     template <typename ...Ts, typename T>
+    //     void f( T && arg, Ts &&...args );
+    //   @endcode
+    // is perfectly valid.
     return ReverseAccumulator<F>(std::forward<F>(f))(
-          std::get<tuple_size<Tuple>::value-indexes-1>(std::forward<Tuple>(tuple))... );
+          std::get<get_tuple_size(tuple)-indexes-1>(std::forward<Tuple>(tuple))... );
   }
 
 } // namespace detail
 
+/// Accumulates the elements of a tuple given a specific functor.
+///
+/// If the elements of the tuple shall be added together, then the functor
+/// parameter should be something like this:
+///   @code
+///     []( auto && rhs, auto && lhs ) { return rhs + lhs; }
+///   @endcode
+/// Note that the operation will be performed left to right associative
+/// independent of the type of functor used.
 template <typename Tuple, typename F>
 decltype(auto) accumulate( Tuple && tuple,
                  F && f )
@@ -161,7 +200,7 @@ decltype(auto) accumulate( Tuple && tuple,
   return detail::accumulate_impl(
         std::forward<Tuple>(tuple),
         std::forward<F>(f),
-        std::make_index_sequence<tuple_size<Tuple>::value>() );
+        std::make_index_sequence<get_tuple_size(tuple)>() );
 }
 
 
@@ -183,6 +222,7 @@ namespace detail
 
 } // namespace detail
 
+/// Returns @c true, iff any of the @c tuple elements evaluates to @true.
 template <typename Tuple, typename F>
 bool any_of( Tuple && tuple,
              F && f )
@@ -190,9 +230,20 @@ bool any_of( Tuple && tuple,
   return detail::any_of_impl(
         std::forward<Tuple>(tuple),
         std::forward<F>(f),
-        std::make_index_sequence<tuple_size<Tuple>::value>() );
+        std::make_index_sequence<get_tuple_size(tuple)>() );
 }
 
+/// This is a helper class which enables the prioritization of overloads.
+///
+/// If there are two overloads of a function that only differ in one argument
+/// type, which are @c Rank<N> and @c Rang<M>, and the function is called
+/// given an argument of type @c Rank<K> where @c K>=N and @K>=M, then
+/// the overload with the larger @c Rank number will be selected by the
+/// compiler.
+///
+/// This is helpful, when an overload shall be prioritized over another and
+/// the prioritized overload may be excluded from overload resolution because
+/// of SFINAE (Substitution Failure Is Not An Error).
 template <std::size_t N>
 class Rank;
 

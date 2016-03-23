@@ -21,6 +21,7 @@ bool endsWith( const std::string & txt, const char (&end)[N] )
 }
 
 
+/// Tells whether the @c txt string ends with the @c end string.
 inline bool endsWith( const std::string & txt, const std::string & end )
 {
   if ( txt.size() < end.size() )
