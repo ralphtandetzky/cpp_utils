@@ -19,4 +19,12 @@ T clipped( const T & toBeClipped, const T & lowerBound, const T & upperBound )
   return std::max( lowerBound, std::min( upperBound, toBeClipped ) );
 }
 
+
+/// Calculates the square of the passed parameter. 
+template <typename T>
+auto sqr( T && x )
+{
+  return x*x;
+}
+
 } // namespace cu
