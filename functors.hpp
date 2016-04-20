@@ -19,4 +19,36 @@ struct NoOpFunctor
   }
 };
 
+
+template <typename Signature>
+class Lambda;
+
+template <typename Result, typename ... Args>
+class Lambda<Result(Args...)>
+{
+public:
+  template <typename F>
+  Lambda( const F & functor )
+    : workLoad( &functor )
+    , f( []( const void * workLoad, Args &&... args ) -> Result
+         {
+            return (*(static_cast<const F*>(workLoad)))( std::forward<Args>(args)... );
+         } )
+  {
+  }
+
+  // disable copying
+  Lambda( const Lambda & ) = delete;
+  Lambda & operator=( Lambda ) = delete;
+
+  Result operator()( Args &&... args ) const
+  {
+    return f( workLoad, std::forward<Args>(args)... );
+  }
+
+private:
+  const void * workLoad = nullptr;
+  Result (*f)(const void*,Args&&...) = nullptr;
+};
+
 }
