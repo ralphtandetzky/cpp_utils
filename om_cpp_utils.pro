@@ -87,4 +87,5 @@ HEADERS += \
     task_queue_thread.hpp \
     units.hpp \
     updater.hpp \
+    visitor.hpp
 
