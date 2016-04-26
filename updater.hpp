@@ -16,7 +16,7 @@ namespace cu
 /// If there might be too many expensive updating tasks for a
 /// task queue to handle, then it might be desirable to drop some tasks
 /// in order to not jam up the task queue. This class does just that.
-/// If there is already a tasks scheduled and a new one comes in,
+/// If there is already a task scheduled and a new one comes in,
 /// then the scheduled task is replaced by the new one which will be executed
 /// in its stead.
 template <typename Executor>
