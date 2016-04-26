@@ -77,6 +77,7 @@ HEADERS += \
     functors.hpp \
     geometry.hpp \
     math_helpers.hpp \
+    meta_functor_binder.hpp \
     meta_programming.hpp \
     monitor.hpp \
     scope_guard.hpp \
