@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <utility>
+
 namespace cu
 {
 
@@ -51,4 +53,59 @@ private:
   Result (*f)(const void*,Args&&...) = nullptr;
 };
 
+
+namespace detail
+{
+
+  template <typename ...Fs>
+  class OverloadedFunctor;
+
+  template <>
+  class OverloadedFunctor<>
+  {
+  public:
+    template <typename ...Ts,
+              typename = std::enable_if_t<false,std::tuple<Ts...>>> // always disabled.
+    void operator()( Ts &&... );
+  };
+
+  template <typename F, typename ...Fs>
+  class OverloadedFunctor<F,Fs...>
+      : public OverloadedFunctor<Fs...>
+  {
+  private:
+    F f;
+    using Base = OverloadedFunctor<Fs...>;
+
+  public:
+    OverloadedFunctor( F && f_, Fs &&... fs )
+      : Base( std::forward<Fs>(fs)... )
+      , f( std::forward<F>(f_) )
+    {}
+
+    using Base::operator();
+
+    template <typename ...Ts>
+    auto operator()( Ts &&... args )
+      -> decltype( f( std::forward<Ts>(args)... ) )
+    {
+      return f( std::forward<Ts>(args)... );
+    }
+
+    template <typename ...Ts>
+    auto operator()( Ts &&... args ) const
+      -> decltype( f( std::forward<Ts>(args)... ) )
+    {
+      return f( std::forward<Ts>(args)... );
+    }
+  };
+
+} // namespace detail
+
+template <typename ...Fs>
+auto makeOverloadedFunctor( Fs &&... fs )
+{
+  return detail::OverloadedFunctor<Fs...>( std::forward<Fs>(fs)... );
 }
+
+} // namespace cu
