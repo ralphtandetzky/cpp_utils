@@ -1,5 +1,7 @@
 #pragma once
 
+#include "functors.hpp"
+
 #include <cassert>
 #include <memory>
 #include <type_traits>
@@ -89,17 +91,52 @@ namespace detail
       : f(std::forward<F>(f_))
     {}
 
-    Result & getResult()
+    Result && getResult()
     {
-      return result;
+      return std::move(result);
     }
 
   protected:
-    F && f;
+    template <typename T>
+    void doVisit( T && arg )
+    {
+      result = std::forward<F>(f)( std::forward<T>(arg) );
+    }
+
+  private:
     Result result{};
+    F && f;
   };
 
-  template <typename F, typename Result, typename VisitorBase, typename T, typename ...Ts>
+  template <typename F,
+            typename VisitorBase>
+  class VisitorImpl<F, void, VisitorBase>
+      : public VisitorBase
+  {
+  public:
+    VisitorImpl( F && f_ )
+      : f(std::forward<F>(f_))
+    {}
+
+    void getResult()
+    {}
+
+  protected:
+    template <typename T>
+    void doVisit( T && arg )
+    {
+      std::forward<F>(f)( std::forward<T>(arg) );
+    }
+
+  private:
+    F && f;
+  };
+
+  template <typename F,
+            typename Result,
+            typename VisitorBase,
+            typename T,
+            typename ...Ts>
   class VisitorImpl<F, Result, VisitorBase, T, Ts...>
       : public VisitorImpl<F, Result, VisitorBase, Ts...>
   {
@@ -109,33 +146,42 @@ namespace detail
     using VisitorBase::visit;
     virtual void visit( T & x ) override
     {
-      VisitorImpl<F, Result, VisitorBase>::result =
-          VisitorImpl<F, Result, VisitorBase>::f( x );
+      this->doVisit( x );
     }
   };
 
 } // namespace detail
 
-
 template <typename ...Ts, typename F>
 auto visit( VisitableBase<Ts...> & visitable, F && f )
 {
-  using Result = std::common_type_t<std::result_of_t<F&&(Ts)>...>;
+  using Result = std::common_type_t<std::result_of_t<F&&(Ts&)>...>;
   detail::VisitorImpl<F, Result, Visitor<Ts...>, Ts...> visitor{
     std::forward<F>(f) };
   visitable.accept( visitor );
-  return std::move( visitor.getResult() );
+  return visitor.getResult();
 }
-
 
 template <typename ...Ts, typename F>
 auto visit( const VisitableBase<Ts...> & visitable, F && f )
 {
-  using Result = std::common_type_t<std::result_of_t<F&&(Ts)>...>;
+  using Result = std::common_type_t<std::result_of_t<F&&(Ts&)>...>;
   detail::VisitorImpl<F, Result, ConstVisitor<Ts...>, const Ts...> visitor{
     std::forward<F>(f) };
   visitable.accept( visitor );
-  return std::move( visitor.getResult() );
+  return visitor.getResult();
+}
+
+template <typename ...Ts, typename ...Fs>
+decltype(auto) visit( VisitableBase<Ts...> & visitable, Fs &&... fs )
+{
+  return visit( visitable, makeOverloadedFunctor( fs... ) );
+}
+
+template <typename ...Ts, typename ...Fs>
+decltype(auto) visit( const VisitableBase<Ts...> & visitable, Fs &&... fs )
+{
+  return visit( visitable, makeOverloadedFunctor( fs... ) );
 }
 
 
