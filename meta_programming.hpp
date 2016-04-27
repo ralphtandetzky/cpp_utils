@@ -14,6 +14,13 @@ constexpr std::size_t get_tuple_size( const std::tuple<Ts...> & )
   return sizeof...(Ts);
 }
 
+template <typename Tuple>
+constexpr auto make_index_sequence( const Tuple & t )
+{
+  return std::make_index_sequence<get_tuple_size(t)>();
+}
+
+
 namespace detail
 {
 
@@ -49,7 +56,7 @@ void for_each( Tuple && tuple, F && f )
   detail::for_each_impl(
         std::forward<Tuple>(tuple),
         std::forward<F>(f),
-        std::make_index_sequence<get_tuple_size(tuple)>() );
+        make_index_sequence(tuple) );
 }
 
 /// Applies a functor to the elements of two tuples.
@@ -78,7 +85,7 @@ void for_each( Tuple1 && tuple1,
         std::forward<Tuple1>(tuple1),
         std::forward<Tuple2>(tuple2),
         std::forward<F>(f),
-        std::make_index_sequence<get_tuple_size(tuple1) >() );
+        make_index_sequence(tuple1) );
 }
 
 
@@ -104,7 +111,7 @@ decltype(auto) transform( Tuple && tuple,
   return detail::transform_impl(
         std::forward<Tuple>(tuple),
         std::forward<F>(f),
-        std::make_index_sequence<get_tuple_size(tuple)>() );
+        make_index_sequence(tuple) );
 }
 
 
@@ -128,7 +135,7 @@ auto to_array( Tuple && tuple )
 {
   return detail::to_array_impl<T>(
         std::forward<Tuple>(tuple),
-        std::make_index_sequence<get_tuple_size(tuple)>() );
+        make_index_sequence(tuple) );
 }
 
 
@@ -200,7 +207,7 @@ decltype(auto) accumulate( Tuple && tuple,
   return detail::accumulate_impl(
         std::forward<Tuple>(tuple),
         std::forward<F>(f),
-        std::make_index_sequence<get_tuple_size(tuple)>() );
+        make_index_sequence(tuple) );
 }
 
 
@@ -230,7 +237,7 @@ bool any_of( Tuple && tuple,
   return detail::any_of_impl(
         std::forward<Tuple>(tuple),
         std::forward<F>(f),
-        std::make_index_sequence<get_tuple_size(tuple)>() );
+        make_index_sequence(tuple) );
 }
 
 /// This is a helper class which enables the prioritization of overloads.

@@ -32,9 +32,9 @@ public:
       MetaFunctorArgsTuple && metaFunctorArgs )
     : MetaFunctorArgumentBinder(
         std::forward<TArgsTuple>(tArgs),
-        std::make_index_sequence<get_tuple_size(tArgs)>(),
+        make_index_sequence(tArgs),
         std::forward<MetaFunctorArgsTuple>(metaFunctorArgs),
-        std::make_index_sequence<get_tuple_size(metaFunctorArgs)>()
+        make_index_sequence(metaFunctorArgs)
         )
   {}
 
