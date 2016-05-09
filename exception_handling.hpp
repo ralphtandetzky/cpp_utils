@@ -72,7 +72,7 @@ namespace detail
 /// In a gui application, the first thing that might be done in the @c main()
 /// function is to call
 ///   @code
-///     setGlobalExceptionHandler( getMessageBoxExceptionHandler() );
+///     cu::setGlobalExceptionHandler( qu::getMessageBoxExceptionHandler() );
 ///   @endcode
 /// In other applications exception messages might be written to a file.
 inline void setGlobalExceptionHandler( std::function<void()> handler )
