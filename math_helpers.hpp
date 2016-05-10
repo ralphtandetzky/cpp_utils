@@ -22,7 +22,7 @@ T clipped( const T & toBeClipped, const T & lowerBound, const T & upperBound )
 
 /// Calculates the square of the passed parameter. 
 template <typename T>
-auto sqr( T && x )
+constexpr auto sqr( T && x )
 {
   return x*x;
 }
