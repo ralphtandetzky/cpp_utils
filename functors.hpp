@@ -22,6 +22,16 @@ struct NoOpFunctor
 };
 
 
+struct ForwardingFunctor
+{
+  template <typename T>
+  decltype(auto) operator()( T && x ) const
+  {
+    return std::forward<T>(x);
+  }
+};
+
+
 template <typename Signature>
 class Lambda;
 
