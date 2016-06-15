@@ -69,6 +69,7 @@ INCLUDEPATH +=  ..
 LIBS +=           $$omLibs()
 
 HEADERS += \
+    c++17_features.hpp \
     concurrent.hpp \
     concurrent_queue.hpp \
     cow_ptr.hpp \
@@ -87,5 +88,4 @@ HEADERS += \
     task_queue_thread.hpp \
     units.hpp \
     updater.hpp \
-    visitor.hpp
-
+    visitor.hpp \
