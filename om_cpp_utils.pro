@@ -81,6 +81,7 @@ HEADERS += \
     meta_functor_binder.hpp \
     meta_programming.hpp \
     monitor.hpp \
+    ranges.hpp \
     scope_guard.hpp \
     string_helpers.hpp \
     swap.hpp \
