@@ -3,13 +3,11 @@
 #include "meta_programming.hpp"
 #include <utility>
 
-namespace cu
-{
-
-namespace detail
+// a non cu-namespace is used in order to avoid infinite recursion.
+namespace cu_swap_impl
 {
   template <typename T>
-  auto swap_impl( T & lhs, T & rhs, Rank<1> ) noexcept
+  auto swap_impl( T & lhs, T & rhs, cu::Rank<1> ) noexcept
     -> decltype( lhs.swap(rhs) )
   {
     static_assert( noexcept( lhs.swap(rhs) ), "Swap is not noexcept!" );
@@ -17,13 +15,16 @@ namespace detail
   }
 
   template <typename T>
-  void swap_impl( T & lhs, T & rhs, Rank<0> ) noexcept
+  void swap_impl( T & lhs, T & rhs, cu::Rank<0> ) noexcept
   {
     using std::swap;
     static_assert( noexcept( swap(lhs,rhs) ), "Swap is not noexcept!" );
     swap(lhs,rhs);
   }
-} // namespace detail
+} // namespace cu_swap_impl
+
+namespace cu
+{
 
 /// The ultimate swapperator! ;)
 ///
@@ -33,17 +34,24 @@ namespace detail
 /// or the namespace of @c T, then that swap will be used to swap the
 /// values. In any case, the used operations are checked to be @c noexcept.
 /// In this manner, this swap function provides the @c noexception guarantee.
-template <typename T>
-void swap( T & lhs, T & rhs ) noexcept
+///
+/// Note that two template arguments are used, so that there is no ambiguity,
+/// when swapping objects of a type in the @c cu namespace that does not have
+/// its own @c cu::swap() overload.
+template <typename T1,
+          typename T2>
+void swap( T1 & lhs, T2 & rhs ) noexcept
 {
-  detail::swap_impl( lhs, rhs, Rank<1>() );
+  ::cu_swap_impl::swap_impl( lhs, rhs, Rank<1>() );
 }
 
 /// Swapping of two built-in arrays of equal size.
 ///
 /// Internally the ultimate swapperator is used to perform the task.
-template <typename T, std::size_t N>
-void swap( T(&lhs)[N], T(&rhs)[N] ) noexcept
+template <typename T1,
+          typename T2,
+          std::size_t N>
+void swap( T1(&lhs)[N], T2(&rhs)[N] ) noexcept
 {
   for ( std::size_t i = 0; i != N; ++i )
     ::cu::swap( lhs[i], rhs[i] );
