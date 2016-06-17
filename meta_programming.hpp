@@ -4,6 +4,8 @@
 #include <tuple>
 #include <utility>
 
+#define CU_FWD(arg) ::std::forward<decltype(arg)>(arg)
+
 namespace cu
 {
 
