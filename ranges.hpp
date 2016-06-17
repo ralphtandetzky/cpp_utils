@@ -146,6 +146,13 @@ void copy( InputRange in, OutputRange out )
 }
 
 
+template <typename RandomAccessRange>
+void sort( RandomAccessRange range )
+{
+  ::std::sort( range.begin(), range.end() );
+}
+
+
 /******************
  * Range adapters *
  ******************/
@@ -219,7 +226,7 @@ auto transformed( F && f )
 }
 
 
-auto moved()
+inline auto moved()
 {
   return transformed( []( auto && x ){ return std::move(x); } );
 }
