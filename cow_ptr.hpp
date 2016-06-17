@@ -4,9 +4,13 @@
 
 #pragma once
 
+#include "meta_programming.hpp"
+#include "visitor.hpp"
+
 #include <atomic>
 #include <cassert>
 #include <memory> // std::default_delete
+#include <type_traits>
 
 namespace cu
 {
@@ -14,10 +18,32 @@ namespace cu
 /// Functor which creates a new copy of an object pointed to.
 struct default_cloner
 {
+public:
     template <typename T>
     T * operator()( const T * p ) const
     {
         assert( typeid( *p ) == typeid( const T& ) );
+        return doClone( p, cu::Rank<2>() );
+    }
+
+private:
+    template <typename T>
+    auto doClone( const T * p, cu::Rank<2> ) const
+        -> decltype( p->clone().release() )
+    {
+        return p->clone().release();
+    }
+
+    template <typename T>
+    auto doClone( const T * p, cu::Rank<1> ) const
+        -> decltype( ::cu::clone( *p ).release() )
+    {
+        return ::cu::clone( *p ).release();
+    }
+
+    template <typename T>
+    T * doClone( const T * p, cu::Rank<0> ) const
+    {
         return new T(*p);
     }
 };
@@ -719,7 +745,7 @@ template <typename Y, typename D, typename C>
 cow_ptr<T> cow_ptr<T>::concrete_counter<Y,D,C>::clone() const
 {
     return cow_ptr<T>(
-        p != nullptr ? cloner(const_cast<const Y *>(p)) : nullptr,
+        (p != nullptr ? cloner(const_cast<const Y *>(p)) : nullptr),
         deleter, cloner );
 }
 

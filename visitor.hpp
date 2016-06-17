@@ -5,6 +5,7 @@
 #include <cassert>
 #include <memory>
 #include <type_traits>
+#include <vector>
 
 namespace cu
 {
@@ -185,14 +186,38 @@ decltype(auto) visit( const VisitableBase<Ts...> & visitable, Fs &&... fs )
 }
 
 
+namespace detail
+{
+
+  template <typename VisitableTemplate>
+  decltype(auto) makeGenericCloner()
+  {
+    return []( const auto & item )
+    {
+      return std::unique_ptr<VisitableTemplate>(
+            std::make_unique<std::decay_t<decltype(item)>>( item ) );
+    };
+  }
+
+} // namespace detail
+
 template <typename VisitableTemplate>
 auto clone( const VisitableTemplate & item )
+  -> decltype( visit( item, detail::makeGenericCloner<VisitableTemplate>() ) )
 {
-  return visit( item, []( const auto & item )
-  {
-    return std::unique_ptr<VisitableTemplate>(
-          std::make_unique<std::decay_t<decltype(item)>>( item ) );
-  });
+  return visit( item, detail::makeGenericCloner<VisitableTemplate>() );
+}
+
+template <typename VisitableTemplate>
+auto clone( const std::vector<std::unique_ptr<VisitableTemplate> > & v )
+  -> decltype( (void)clone( *v[0] ),
+               std::unique_ptr<std::vector<std::unique_ptr<VisitableTemplate> > >() )
+{
+  auto result = std::make_unique<std::vector<std::unique_ptr<VisitableTemplate> > >();
+  for ( const auto & x : v )
+    result->push_back( clone( *x ) );
+
+  return result;
 }
 
 } // namespace cu
