@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include "swap.hpp"
+
 #include <mutex>
 
 namespace cu
@@ -106,6 +108,23 @@ public:
   {
     std::unique_lock<std::mutex> lock(mutex);
     return std::forward<F>(f)( item, lock );
+  }
+
+  /// Atomically swaps the contents of @c this object with the @c other object.
+  void exchange( T & other )
+  {
+    (*this)( [&]( T & mine ){ ::cu::swap( mine, other ); } );
+  }
+
+  void exchange( T && other )
+  {
+    exchange( other );
+  }
+
+  /// Returns the contents of this object.
+  T load() const
+  {
+    return (*this)( []( auto && item ){ return item; } );
   }
 };
 
