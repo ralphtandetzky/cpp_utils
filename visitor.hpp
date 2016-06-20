@@ -220,4 +220,37 @@ auto clone( const std::vector<std::unique_ptr<VisitableTemplate> > & v )
   return result;
 }
 
+
+namespace detail
+{
+
+  struct IsEqualFunctor
+  {
+    template <typename T>
+    bool operator()( const T & lhs, const T & rhs ) const
+    {
+      return lhs == rhs;
+    }
+
+    template <typename T1, typename T2>
+    bool operator()( const T1 &, const T2 & ) const
+    {
+      return false;
+    }
+  };
+
+} // namespace detail
+
+template <typename VisitableTemplate>
+bool isEqual( const VisitableTemplate & lhs, const VisitableTemplate & rhs )
+{
+  return visit( lhs, [&rhs]( const auto & lhs )
+  {
+    return visit( rhs, [&lhs]( const auto & rhs )
+    {
+      return detail::IsEqualFunctor()( lhs, rhs );
+    });
+  });
+}
+
 } // namespace cu
