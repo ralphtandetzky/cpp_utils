@@ -121,7 +121,7 @@ namespace detail
 {
 
   template <typename T, typename Tuple, std::size_t ...indexes>
-  auto to_array_impl( Tuple && tuple, std::index_sequence<indexes...> )
+  auto to_array_impl1( Tuple && tuple, std::index_sequence<indexes...> )
   {
     return std::array<T,get_tuple_size(tuple)>{
       std::get<indexes>( std::forward<Tuple>(tuple))... };
@@ -135,9 +135,29 @@ namespace detail
 template <typename T, typename Tuple>
 auto to_array( Tuple && tuple )
 {
-  return detail::to_array_impl<T>(
+  return detail::to_array_impl1<T>(
         std::forward<Tuple>(tuple),
         make_index_sequence(tuple) );
+}
+
+
+namespace detail
+{
+
+  template <typename T, std::size_t ...indexes>
+  auto to_array_impl2( T * arr, std::index_sequence<indexes...> )
+  {
+    return std::array<std::decay_t<T>,sizeof...(indexes)>{ {
+          arr[indexes]...
+          } };
+  }
+
+} // namespace detail
+
+template <typename T, std::size_t N>
+auto to_array( T(&arr)[N] )
+{
+  return detail::to_array_impl2( arr, std::make_index_sequence<N>() );
 }
 
 
