@@ -161,6 +161,14 @@ auto to_array( T(&arr)[N] )
 }
 
 
+template <typename ...Ts>
+constexpr auto make_array( Ts &&... elems )
+  -> std::array<std::common_type_t<Ts...>, sizeof...(Ts) >
+{
+  return { std::forward<Ts>(elems)... };
+}
+
+
 namespace detail
 {
 
