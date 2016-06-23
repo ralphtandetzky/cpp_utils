@@ -238,6 +238,9 @@ public:
     /// Default constuctor.
     cow_ptr() noexcept;
 
+    /// Calls default constructor.
+    cow_ptr( std::nullptr_t ) noexcept;
+
     /// Copy constructor. Never throws!
     cow_ptr( const cow_ptr & other ) noexcept;
 
@@ -263,6 +266,9 @@ public:
     explicit cow_ptr( Y * p
           , D deleter = std::default_delete<Y>()
           , C cloner = default_cloner() );
+
+    template <typename Y>
+    cow_ptr( std::unique_ptr<Y> other );
 
     ////////////////
     // destructor //
@@ -437,6 +443,15 @@ const T & operator*( const cow_ptr<T> & p ) noexcept;
 template <typename T, typename Y = T, typename ...Args>
 cow_ptr<T> make_cow( Args&&...args );
 
+
+/// Wraps an object into a @c cow_ptr.
+template <typename T>
+cow_ptr<std::decay_t<T>> to_cow_ptr( T && x )
+{
+  return make_cow<std::decay_t<T>>( std::forward<T>(x) );
+}
+
+
 /// Macro to simplify applying functors to the internal pointer of a
 /// cow pointer.
 /** Instead of
@@ -536,6 +551,13 @@ cow_ptr<T>::cow_ptr() noexcept
 
 
 template <typename T>
+cow_ptr<T>::cow_ptr( std::nullptr_t ) noexcept
+    : cow_ptr()
+{
+}
+
+
+template <typename T>
 cow_ptr<T>::cow_ptr( const cow_ptr & other ) noexcept
     : px(other.px)
     , pn(other.pn)
@@ -563,6 +585,14 @@ cow_ptr<T>::cow_ptr( Y * p, D deleter, C cloner )
 {
 //    static_assert( noexcept(deleter(p)), "The deleter must not throw." );
     pn->acquire();
+}
+
+
+template <typename T>
+template <typename Y>
+cow_ptr<T>::cow_ptr( std::unique_ptr<Y> other )
+  : cow_ptr( other.release() )
+{
 }
 
 
@@ -802,10 +832,26 @@ const T & operator*( const cow_ptr<T> & p ) noexcept
 }
 
 
+namespace detail
+{
+    template <typename T, typename Y, typename ...Args,
+              typename std::enable_if<std::is_copy_constructible<Y>::value,int>::type = 0>
+    cow_ptr<T> make_cow_impl( Rank<1>, Args&&...args )
+    {
+        return cow_ptr<T>::template make<Y>( CU_FWD(args)... );
+    }
+
+    template <typename T, typename Y, typename ...Args>
+    cow_ptr<T> make_cow_impl( Rank<0>, Args&&...args )
+    {
+        return cow_ptr<T>( new Y( CU_FWD(args)... ) );
+    }
+} // namespace detail
+
 template <typename T, typename Y, typename ...Args>
 cow_ptr<T> make_cow( Args&&...args )
 {
-    return cow_ptr<T>::template make<Y>( std::forward<Args>(args)... );
+    return detail::make_cow_impl<T,Y>( Rank<1>{}, std::forward<Args>(args)... );
 }
 
 
