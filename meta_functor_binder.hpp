@@ -2,52 +2,39 @@
 
 #include "meta_programming.hpp"
 
+#include <functional>
+#include <utility>
+
 namespace cu
 {
 
 template <typename T, typename MetaFunctor>
 class MetaFunctorArgumentBinder
 {
-  T item;
-  MetaFunctor metaFunctor;
-
-  template <typename ...TArgs,
-            std::size_t ...tArgsIndices,
-            typename ...MetaFunctorArgs,
-            std::size_t ...metaFunctorArgsIndices>
-  MetaFunctorArgumentBinder(
-      const std::tuple<TArgs...> & tArgs,
-      std::index_sequence<tArgsIndices...>,
-      const std::tuple<MetaFunctorArgs...> & metaFunctorArgs,
-      std::index_sequence<metaFunctorArgsIndices...> )
-    : item       ( std::forward<TArgs          >(std::get<tArgsIndices          >(tArgs          ))... )
-    , metaFunctor( std::forward<MetaFunctorArgs>(std::get<metaFunctorArgsIndices>(metaFunctorArgs))... )
-  {
-  }
+  std::pair<T,MetaFunctor> data;
 
 public:
   template <typename TArgsTuple, typename MetaFunctorArgsTuple>
   MetaFunctorArgumentBinder(
       TArgsTuple && tArgs,
       MetaFunctorArgsTuple && metaFunctorArgs )
-    : MetaFunctorArgumentBinder(
-        std::forward<TArgsTuple>(tArgs),
-        make_index_sequence(tArgs),
-        std::forward<MetaFunctorArgsTuple>(metaFunctorArgs),
-        make_index_sequence(metaFunctorArgs)
-        )
+    : data( std::piecewise_construct,
+            CU_FWD(tArgs),
+            CU_FWD(metaFunctorArgs) )
   {}
 
   template <typename F>
   decltype(auto) operator()( F && f )
   {
-    return metaFunctor( std::bind( std::forward<F>(f), std::ref(item) ) );
+    return data.second( std::bind( std::forward<F>(f),
+                                   std::ref(data.first) ) );
   }
 
   template <typename F>
   decltype(auto) operator()( F && f ) const
   {
-    return metaFunctor( std::bind( std::forward<F>(f), std::ref(item) ) );
+    return data.second( std::bind( std::forward<F>(f),
+                                   std::ref(data.first) ) );
   }
 
 };
