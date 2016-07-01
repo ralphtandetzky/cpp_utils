@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "swap.hpp"
+
 #include <utility>
 
 namespace cu
@@ -117,5 +119,110 @@ auto makeOverloadedFunctor( Fs &&... fs )
 {
   return detail::OverloadedFunctor<Fs...>( std::forward<Fs>(fs)... );
 }
+
+
+/// This class mimics the behaviour of std::function, except that it
+/// does not require the assigned functors to be copyable, but to be
+/// movable only. Consequently, @c function_move_only objects are
+/// MoveOnly as well.
+template <typename T>
+class function_move_only;
+
+template <typename Res,
+          typename ...Args>
+class function_move_only<Res(Args...)>
+{
+public:
+  function_move_only() noexcept
+  {}
+
+  function_move_only( std::nullptr_t ) noexcept
+  {}
+
+  function_move_only( function_move_only && other ) noexcept
+  {
+    swap( other );
+  }
+
+  template <typename F>
+  function_move_only( F && f )
+    : callPtr( makeCallPtr<F>() )
+    , cleanUpPtr( makeCleanUpPtr<F>() )
+    , payLoad( makePayLoad( CU_FWD(f) ) )
+  {}
+
+  ~function_move_only()
+  {
+    cleanUp();
+  }
+
+  function_move_only & operator=( std::nullptr_t ) noexcept
+  {
+    cleanUp();
+  }
+
+  function_move_only & operator=( function_move_only && other ) noexcept
+  {
+    cleanUp();
+    swap( other );
+  }
+
+  template <typename F>
+  function_move_only & operator=( F && f )
+  {
+    function_move_only( CU_FWD(f) ).swap( *this );
+  }
+
+  void swap( function_move_only & other ) noexcept
+  {
+    cu::swap( callPtr   , other.callPtr    );
+    cu::swap( cleanUpPtr, other.cleanUpPtr );
+    cu::swap( payLoad   , other.payLoad    );
+  }
+
+  explicit operator bool() const noexcept;
+  Res operator()( Args...args ) const
+  {
+    callPtr( payLoad, CU_FWD(args)... );
+  }
+
+private:
+  template <typename F>
+  static Res (*makeCallPtr())( void *, Args&&... )
+  {
+    return []( void * payLoad, Args&&...args )
+    {
+      (*static_cast<typename std::decay<F>::type*>(payLoad))( CU_FWD(args)... );
+    };
+  }
+
+  template <typename F>
+  static void (*makeCleanUpPtr())( void* )
+  {
+    return []( void * payLoad )
+    {
+      delete static_cast<typename std::decay<F>::type*>(payLoad);
+    };
+  }
+
+  template <typename F>
+  static void * makePayLoad( F && f )
+  {
+    return new typename std::decay<F>::type( CU_FWD(f) );
+  }
+
+  void cleanUp() noexcept
+  {
+    if ( cleanUpPtr )
+      cleanUpPtr( payLoad );
+    callPtr    = nullptr;
+    cleanUpPtr = nullptr;
+    payLoad    = nullptr;
+  }
+
+  Res (*callPtr)( void *, Args&&... ) = nullptr;
+  void (*cleanUpPtr)( void * ) = nullptr;
+  void * payLoad = nullptr;
+};
 
 } // namespace cu
