@@ -92,3 +92,5 @@ HEADERS += \
     units.hpp \
     updater.hpp \
     visitor.hpp \
+    rank.hpp \
+    fwd.hpp

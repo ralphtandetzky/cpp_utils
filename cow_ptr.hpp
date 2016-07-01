@@ -4,7 +4,8 @@
 
 #pragma once
 
-#include "meta_programming.hpp"
+#include "fwd.hpp"
+#include "rank.hpp"
 #include "visitor.hpp"
 
 #include <atomic>
