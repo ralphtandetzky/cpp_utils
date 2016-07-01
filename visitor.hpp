@@ -189,8 +189,8 @@ decltype(auto) visit( const VisitableBase<Ts...> & visitable, Fs &&... fs )
 namespace detail
 {
 
-  template <typename VisitableTemplate>
-  decltype(auto) makeGenericCloner()
+  template <typename VisitableTemplate, typename ...Ts>
+  decltype(auto) makeGenericCloner( const VisitableBase<Ts...> & )
   {
     return []( const auto & item )
     {
@@ -199,13 +199,24 @@ namespace detail
     };
   }
 
+  template <typename VisitableTemplate, typename Derived, typename Base>
+  decltype(auto) makeGenericCloner( const VisitableImpl<Derived,Base> & )
+  {
+    return []( const auto & item )
+    {
+      return std::unique_ptr<Base>(
+            std::make_unique<std::decay_t<decltype(item)>>( item ) );
+    };
+  }
+
 } // namespace detail
 
 template <typename VisitableTemplate>
 auto clone( const VisitableTemplate & item )
-  -> decltype( visit( item, detail::makeGenericCloner<VisitableTemplate>() ) )
+  -> decltype(
+         visit( item, detail::makeGenericCloner<VisitableTemplate>( item ) ) )
 {
-  return visit( item, detail::makeGenericCloner<VisitableTemplate>() );
+  return visit( item, detail::makeGenericCloner<VisitableTemplate>( item ) );
 }
 
 template <typename VisitableTemplate>
