@@ -3,6 +3,7 @@
 #include "functors.hpp"
 
 #include <cassert>
+#include <experimental/optional>
 #include <memory>
 #include <type_traits>
 #include <vector>
@@ -80,6 +81,32 @@ public:
 namespace detail
 {
 
+  template <typename T, bool isDefaultConstructible>
+  struct OptionalIfNotDefaultConstructibleImpl;
+
+  template <typename T>
+  struct OptionalIfNotDefaultConstructibleImpl<T,true>
+  {
+    using type = T;
+    template <typename U>
+    static decltype(auto) moveOutValue( U && x ) { return std::move(x); }
+  };
+
+  template <typename T>
+  struct OptionalIfNotDefaultConstructibleImpl<T,false>
+  {
+    using type = std::experimental::optional<T>;
+    template <typename U>
+    static decltype(auto) moveOutValue( U && x ) { return std::move(x.value()); }
+  };
+
+  template <typename T>
+  struct OptionalIfNotDefaultConstructible
+      :  OptionalIfNotDefaultConstructibleImpl<
+            T,
+            std::is_default_constructible<T>::value>
+  {};
+
   template <typename ...Ts>
   class VisitorImpl;
 
@@ -94,7 +121,7 @@ namespace detail
 
     Result && getResult()
     {
-      return std::move(result);
+      return OptionalIfNotDefaultConstructible<Result>::moveOutValue( result );
     }
 
   protected:
@@ -105,7 +132,7 @@ namespace detail
     }
 
   private:
-    Result result{};
+    typename OptionalIfNotDefaultConstructible<Result>::type result{};
     F && f;
   };
 
