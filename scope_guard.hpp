@@ -61,8 +61,8 @@ namespace detail
   struct OnSuccessTag {};
 
   inline bool shallExecuteScopeGuard( OnExitTag    ) { return true                      ; }
-  inline bool shallExecuteScopeGuard( OnFailTag    ) { return !!std::current_exception(); }
-  inline bool shallExecuteScopeGuard( OnSuccessTag ) { return ! std::current_exception(); }
+  inline bool shallExecuteScopeGuard( OnFailTag    ) { return  std::uncaught_exception(); }
+  inline bool shallExecuteScopeGuard( OnSuccessTag ) { return !std::uncaught_exception(); }
 
   template <typename Tag>
   class ScopeGuardImpl
