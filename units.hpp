@@ -53,4 +53,8 @@ constexpr double  kiloVolt = 1.e+3 * Volt;
 constexpr double milliVolt = 1.e-3 * Volt;
 constexpr double microVolt = 1.e-6 * Volt;
 
+constexpr double      Ampere = 1.;
+constexpr double milliAmpere = 1.e-3 * Ampere;
+constexpr double microAmpere = 1.e-6 * Ampere;
+
 } // namespace cu
