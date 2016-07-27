@@ -76,7 +76,9 @@ HEADERS += \
     exception.hpp \
     exception_handling.hpp \
     functors.hpp \
+    fwd.hpp \
     geometry.hpp \
+    json.hpp \
     math_helpers.hpp \
     memory_helpers.hpp \
     meta_functor_binder.hpp \
@@ -84,6 +86,7 @@ HEADERS += \
     monitor.hpp \
     pimpl_ptr.hpp \
     ranges.hpp \
+    rank.hpp \
     scope_guard.hpp \
     string_helpers.hpp \
     swap.hpp \
@@ -92,5 +95,3 @@ HEADERS += \
     units.hpp \
     updater.hpp \
     visitor.hpp \
-    rank.hpp \
-    fwd.hpp
