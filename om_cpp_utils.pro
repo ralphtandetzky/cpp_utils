@@ -69,6 +69,7 @@ INCLUDEPATH +=  ..
 LIBS +=           $$omLibs()
 
 HEADERS += \
+    algorithm.hpp \
     c++17_features.hpp \
     concurrent.hpp \
     concurrent_queue.hpp \
@@ -93,4 +94,4 @@ HEADERS += \
     updater.hpp \
     visitor.hpp \
     rank.hpp \
-    fwd.hpp
+    fwd.hpp \
