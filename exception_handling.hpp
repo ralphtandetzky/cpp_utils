@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cassert>
+#include <functional>
 #include <exception>
 #include <vector>
 
@@ -72,9 +73,15 @@ namespace detail
 /// In a gui application, the first thing that might be done in the @c main()
 /// function is to call
 ///   @code
-///     cu::setGlobalExceptionHandler( qu::getMessageBoxExceptionHandler() );
+///     cu::setGlobalExceptionHandler(
+///         qu::getMessageBoxExceptionHandler() );
 ///   @endcode
-/// In other applications exception messages might be written to a file.
+/// In other applications exception messages might be written to a file or to
+/// another stream, e. g. with
+///   @code
+///     cu::setGlobalExceptionHandler(
+///         cu::getStreamDumpingExceptionHandler( std::cerr ) );
+///   @endcode
 inline void setGlobalExceptionHandler( std::function<void()> handler )
 {
   detail::getGlobalExceptionHandlerRef().swap(handler);
@@ -222,5 +229,58 @@ public:
   }
 
 };
+
+
+/// Returns the what() message of an @c std::exception.
+///
+/// If the underlying exception does not derive from @c std::exception,
+/// then a generic string is returned.
+inline std::string what( const std::exception_ptr & e_ptr )
+{
+  try
+  {
+    assert( e_ptr );
+    std::rethrow_exception( e_ptr );
+  }
+  catch ( const std::exception & e )
+  {
+    return e.what();
+  }
+  catch( ... )
+  {
+    return "No problem details available.";
+  }
+}
+
+
+/// Returns a string containing a numbered list with separated lines.
+///
+/// The returned string can be something like
+///   @code
+///     "1. Could not save the file.\n"
+///     "2. The file 'my_file.png' could not be opened for writing.\n"
+///   @endcode
+inline std::string dumpExceptionChain(
+    const std::vector<std::exception_ptr> & e_ptrs =
+      getNestedExceptionPtrs( std::current_exception() ) )
+{
+  auto i = 0;
+  std::string s;
+  for ( const auto & e_ptr : e_ptrs )
+    s = s + std::to_string(++i) + ". " + what( e_ptr ) + "\n";
+
+  return s;
+}
+
+
+/// Returns a generic exception handler that dumps error messages to a stream.
+///
+/// @param stream Any stream of a type that can stream @c std::string objects
+///   with the @c operator<<(), e. g. std::cerr or a file stream.
+template <typename Stream>
+auto getStreamDumpingExceptionHandler( Stream & stream )
+{
+  return [&] { stream << "A problem occurred:\n" << dumpExceptionChain(); };
+}
 
 } // namespace cu

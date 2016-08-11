@@ -31,4 +31,18 @@ inline bool endsWith( const std::string & txt, const std::string & end )
 }
 
 
+/// Removes whitespaces from the beginning and end of a string.
+inline std::string trim( const std::string & s )
+{
+  auto first = s.begin();
+  auto last = s.end();
+  while ( first < last && std::isspace( *first) )
+    ++first;
+  while ( last > first && std::isspace( *std::prev(last) ) )
+    --last; // NOOP
+
+  return { first, last };
+}
+
+
 } // namespace cu
