@@ -1,16 +1,27 @@
 #pragma once
 
 #include "rank.hpp"
+
+#include <functional>
 #include <utility>
 
 // a non cu-namespace is used in order to avoid infinite recursion.
 namespace cu_swap_impl
 {
   template <typename T>
+  struct is_std_function : std::false_type {};
+  template <typename T>
+  struct is_std_function<std::function<T>> : std::true_type {};
+
+  template <typename T>
   auto swap_impl( T & lhs, T & rhs, cu::Rank<1> ) noexcept
     -> decltype( lhs.swap(rhs) )
   {
-    static_assert( noexcept( lhs.swap(rhs) ), "Swap is not noexcept!" );
+    static_assert(
+          // workaround for GCC-Bug 77322 -
+          // [C++11] std::function::swap should be noexcept.
+          is_std_function<std::decay_t<T>>::value ||
+          noexcept( lhs.swap(rhs) ), "Swap is not noexcept!" );
     return lhs.swap(rhs);
   }
 
