@@ -268,4 +268,49 @@ bool any_of( Tuple && tuple,
         make_index_sequence(tuple) );
 }
 
+
+namespace detail
+{
+
+template <bool>
+struct StaticIfImpl;
+
+template <>
+struct StaticIfImpl<true>
+{
+  template <typename T, typename U>
+  decltype(auto) operator()( T && t, U && )
+  {
+    return std::forward<T>(t);
+  }
+};
+
+template <>
+struct StaticIfImpl<false>
+{
+  template <typename T, typename U>
+  decltype(auto) operator()( T &&, U && u )
+  {
+    return std::forward<U>(u);
+  }
+};
+
+} // namespace detail
+
+/// Returns a perfectly forwarded @c then_ or @c else_, depending on the
+/// compile-time value of @c cond.
+///
+/// The types of @c then_ and @c else_ may be different.
+template <bool cond,
+          typename ThenVal,
+          typename ElseVal>
+decltype(auto) static_if(
+    ThenVal && then_,
+    ElseVal && else_ )
+{
+  return detail::StaticIfImpl<cond>()(
+        std::forward<ThenVal>(then_),
+        std::forward<ElseVal>(else_) );
+}
+
 } // namespace cu
