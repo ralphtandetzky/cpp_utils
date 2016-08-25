@@ -1,18 +1,13 @@
 # This project underlies the optiMEAS Source Code License which is
 # to be found at www.optimeas.de/source_code_license.
 
-TEMPLATE = lib
-include(../../om_pro_tools/om_pro_tools.pri)
+QT       -= core gui
+TARGET    = om_channels
+TEMPLATE  = lib
 
-CONFIG += console
+exists( $$PWD/../../common_config.pri ) : include( $$PWD/../../common_config.pri )
 
-QT -= core gui widgets
-
-OM_LIBS += 
-DEFINES +=        $$omEnableExports(OM_CPP_UTILS)
-PRE_TARGETDEPS += $$omDependencies()
-INCLUDEPATH +=  ..
-LIBS +=           $$omLibs()
+SOURCES +=
 
 HEADERS += \
     algorithm.hpp \
