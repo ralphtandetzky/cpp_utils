@@ -32,7 +32,7 @@
  * Note that the argument to the macro is evaluated lazily, even though
  * it does not look like it.
  *
- * The macro @c CU_ENSURE tests a condition. If the condition is not
+ * The macro @c CU_ENFORCE tests a condition. If the condition is not
  * evaluated to @c true, then an exception with a specified error message is
  * thrown.
  *
