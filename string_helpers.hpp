@@ -7,6 +7,20 @@ namespace cu
 {
 
 
+/// Tells whether the @c txt string starts with the @c start string.
+template <std::size_t N>
+bool startsWith( const std::string & txt, const char (&start)[N] )
+{
+  // The actual length of the `start` string is N-1, because of the
+  // terminating '\0' character.
+  const auto startLength = N-1;
+  if ( txt.size() < startLength )
+    return false;
+  return std::equal( start, start + startLength,
+                     txt.begin() );
+}
+
+
 /// Tells whether the @c txt string ends with the @c end string.
 template <std::size_t N>
 bool endsWith( const std::string & txt, const char (&end)[N] )
