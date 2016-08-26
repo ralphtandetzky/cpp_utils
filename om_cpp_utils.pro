@@ -1,33 +1,5 @@
- # optiMEAS GmbH Measurement and Automation Systems
- #  ------------------------------------------------
- #
- #  copright (c) 2015 -
- #  author:      $Author$
- #
- #  e-Mail:      info@optimeas.de
- #  web:         http://www.optimeas.de
- #
- #  This file is part of the project:
- #
- #      $Project$
- #      ---------------------------------------------
- #
- # *************************************************************************
- #
- # The source code is given as is. The author is not responsible for any
- # possible damage done due to the use of this code. The component can be
- # freely used in any application. Source code remains property of the
- # author and may not be distributed, published, given or sold in any
- # form as such. No parts of the source code can be included in any other
- # component or application without written authorization of optiMEAS GmbH.
- #
- # The documents version, history and changelog is provided from the
- # version control system (SVN, GIT, etc.). It is never added to the
- # document itself avoiding unnecessary changes and conflicts during
- # merge.
- #
- # ************************************************************************
- #
+# This project underlies the optiMEAS Source Code License which is
+# to be found at www.optimeas.de/source_code_license.
 
 TEMPLATE = lib
 include(../../om_pro_tools/om_pro_tools.pri)
@@ -39,10 +11,7 @@ include(../../om_pro_tools/om_pro_tools.pri)
 # - INCLUDEPATH+= for ./include or any om-libraries listed in OM_LIBS
 
 CONFIG += console
-
-# what ever you need for Qt ...
-QT += core
-QT -= gui
+CONFIG -= qt
 
 # add all prerequisite libraries here as white space list
 # e.g. om_log om_scpi ...
