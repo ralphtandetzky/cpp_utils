@@ -1,6 +1,7 @@
 #pragma once
 
 #include "functors.hpp"
+#include "meta_programming.hpp"
 
 #include <cassert>
 #include <experimental/optional>
@@ -289,6 +290,75 @@ bool isEqual( const VisitableTemplate & lhs, const VisitableTemplate & rhs )
       return detail::IsEqualFunctor()( lhs, rhs );
     });
   });
+}
+
+
+template <typename T>
+struct VisitableTag { using type = T; };
+
+namespace detail
+{
+  template <typename ...ArgsOfBase>
+  auto makeVisitableTagTupleImpl(
+      const VisitableBase<ArgsOfBase...> & )
+  {
+    return std::make_tuple( VisitableTag<ArgsOfBase>{}... );
+  }
+} // namespace detail
+
+/// Returns a @c std::tuple<VisitableTag<Ts>...> for template meta programming.
+///
+/// The template parameter pack @c Ts is chosen such that
+/// @c DerivedFromVisitableBase derives from @c VisitableBase<Ts...>.
+///
+/// The returned value can be used for template meta programming, in particular
+/// with @c cu::for_each().
+///
+/// @example If all derived classes of visitable class @c MyVisitable are
+/// default constructible, then a @c std::vector<std::unique_ptr<MyVisitable>
+/// can be created easily by writing the following:
+///   @code
+///     std::vector<std::unique_ptr<MyVisitable> > generateAllMyVisitables()
+///     {
+///       std::vector<std::unique_ptr<MyVisitable>> result;
+///       cu::for_each(
+///             cu::makeVisitableTagTuple<MyVisitable>(),
+///             [&]( auto tag )
+///       {
+///         result.push_back( std::make_unique<typename decltype(tag)::type>() );
+///       });
+///       return result;
+///     }
+///   @endcode
+/// Note that the template function @c generateAllDerivedVisitables() does
+/// exactly that.
+template <typename DerivedFromVisitableBase>
+auto makeVisitableTagTuple()
+{
+  return decltype( detail::makeVisitableTagTupleImpl(
+                     std::declval<DerivedFromVisitableBase>() ) ){};
+}
+
+
+/// Creates a vector of derived visitable types of @c VisitableBaseType.
+///
+/// If @c VisitableBaseType derived from @c VisitableBase<Ts...>, then
+/// a vector is generated, which contains the following elements:
+///   @code
+///     { std::make_unique<Ts>()... }
+///   @endcode
+/// Note
+template <typename VisitableBaseType>
+std::vector<std::unique_ptr<VisitableBaseType> > generateAllDerivedVisitables()
+{
+  std::vector<std::unique_ptr<VisitableBaseType>> result;
+  cu::for_each(
+        cu::makeVisitableTagTuple<VisitableBaseType>(),
+        [&]( auto tag )
+  {
+    result.push_back( std::make_unique<typename decltype(tag)::type>() );
+  });
+  return result;
 }
 
 } // namespace cu
