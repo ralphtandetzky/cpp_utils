@@ -1,4 +1,5 @@
 /** @file This file defines features available from C++17 onwards.
+ *
  * The features are defined in the cu namespace instead of the std namespace.
  * When moving to C++17 just remove this header from the project,
  * in order to keep you project clean. This should require only a bit of
