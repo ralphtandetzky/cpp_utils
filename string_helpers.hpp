@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <cassert>
 #include <string>
 
 namespace cu
@@ -58,5 +59,20 @@ inline std::string trim( const std::string & s )
   return { first, last };
 }
 
+
+inline std::string replaceEndWith(
+    std::string input,
+    const std::string & newEnd )
+{
+  assert( newEnd.size() <= input.size() );
+  auto newEndStart = input.end()-newEnd.size();
+  while ( (*newEndStart & 0xC0 ) == 0x80 ) // care about unicode (UTF-8)
+    --newEndStart;
+  std::copy( newEnd.begin(),
+             newEnd.end  (),
+             newEndStart );
+  input.resize( newEndStart + newEnd.size() - input.begin() );
+  return std::move( input );
+}
 
 } // namespace cu
