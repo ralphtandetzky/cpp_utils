@@ -6,6 +6,8 @@
 
 #include "swap.hpp"
 
+#include <functional>
+#include <memory>
 #include <utility>
 
 namespace cu
@@ -111,106 +113,132 @@ auto makeOverloadedFunctor( Fs &&... fs )
 
 /// This class mimics the behaviour of std::function, except that it
 /// does not require the assigned functors to be copyable, but to be
-/// movable only. Consequently, @c function_move_only objects are
+/// movable only. Consequently, @c MoveFunction objects are
 /// MoveOnly as well.
 template <typename T>
-class function_move_only;
+class MoveFunction;
 
 template <typename Res,
           typename ...Args>
-class function_move_only<Res(Args...)>
+class MoveFunction<Res(Args...)>
 {
 public:
-  function_move_only() noexcept
+  // constructors
+
+  MoveFunction() noexcept
+    : payLoad( nullptr, [](void*){} )
   {}
 
-  function_move_only( std::nullptr_t ) noexcept
+  MoveFunction( std::nullptr_t ) noexcept
+    : MoveFunction()
   {}
 
-  function_move_only( function_move_only && other ) noexcept
+  MoveFunction( MoveFunction && other ) noexcept
+    : MoveFunction()
   {
     swap( other );
   }
 
   template <typename F>
-  function_move_only( F && f )
-    : callPtr( makeCallPtr<F>() )
-    , cleanUpPtr( makeCleanUpPtr<F>() )
-    , payLoad( makePayLoad( CU_FWD(f) ) )
+  MoveFunction( F && f )
+    : MoveFunction(
+        std::forward<F>(f),
+        typename std::conditional_t<
+          std::is_empty<std::decay_t<F>>::value,
+          EmptyPayLoadTag,
+          typename std::conditional_t<
+            std::is_convertible<F,Res(*)(Args...)>::value,
+            FunctionPointerTag,
+            NonEmptyPayLoadTag
+          >
+        >{} )
   {}
 
-  ~function_move_only()
+  // assignment and swap
+
+  MoveFunction & operator=( MoveFunction other ) noexcept
   {
-    cleanUp();
+    other.swap();
   }
 
-  function_move_only & operator=( std::nullptr_t ) noexcept
+  void swap( MoveFunction & other ) noexcept
   {
-    cleanUp();
+    std::swap( callPtr, other.callPtr );
+    std::swap( payLoad, other.payLoad );
   }
 
-  function_move_only & operator=( function_move_only && other ) noexcept
+  // operators
+
+  explicit operator bool() const noexcept
   {
-    cleanUp();
-    swap( other );
+    return callPtr;
   }
 
-  template <typename F>
-  function_move_only & operator=( F && f )
-  {
-    function_move_only( CU_FWD(f) ).swap( *this );
-  }
-
-  void swap( function_move_only & other ) noexcept
-  {
-    cu::swap( callPtr   , other.callPtr    );
-    cu::swap( cleanUpPtr, other.cleanUpPtr );
-    cu::swap( payLoad   , other.payLoad    );
-  }
-
-  explicit operator bool() const noexcept;
   Res operator()( Args...args ) const
   {
-    callPtr( payLoad, CU_FWD(args)... );
+    if ( *this )
+      return callPtr( payLoad.get(), std::forward<Args>(args)... );
+    else
+      throw std::bad_function_call{};
   }
 
 private:
+  struct EmptyPayLoadTag    {};
+  struct FunctionPointerTag {};
+  struct NonEmptyPayLoadTag {};
+
   template <typename F>
-  static Res (*makeCallPtr())( void *, Args&&... )
+  MoveFunction( F && f, EmptyPayLoadTag )
+    : callPtr
+      {
+        []( void * payLoad, Args&&...args )
+        {
+          return (*static_cast<std::remove_reference_t<F>*>(payLoad))(
+                std::forward<Args>(args)...);
+        }
+      }
+    , payLoad{ &f, [](void*){} }
+  {}
+
+  template <typename F>
+  MoveFunction( F && f, FunctionPointerTag )
+    : callPtr
+      {
+        []( void * payLoad, Args&&...args )
+        {
+          return reinterpret_cast<Res(*)(Args...)>(payLoad)(
+                std::forward<Args>(args)...);
+        }
+      }
+    , payLoad{
+        reinterpret_cast<void*>(static_cast<Res(*)(Args...)>(f)),
+        [](void*){}
+      }
   {
-    return []( void * payLoad, Args&&...args )
-    {
-      (*static_cast<typename std::decay<F>::type*>(payLoad))( CU_FWD(args)... );
-    };
+    static_assert( sizeof(Res(*)(Args...)) == sizeof(void*), "" );
   }
 
   template <typename F>
-  static void (*makeCleanUpPtr())( void* )
-  {
-    return []( void * payLoad )
-    {
-      delete static_cast<typename std::decay<F>::type*>(payLoad);
-    };
-  }
-
-  template <typename F>
-  static void * makePayLoad( F && f )
-  {
-    return new typename std::decay<F>::type( CU_FWD(f) );
-  }
-
-  void cleanUp() noexcept
-  {
-    if ( cleanUpPtr )
-      cleanUpPtr( payLoad );
-    callPtr    = nullptr;
-    cleanUpPtr = nullptr;
-    payLoad    = nullptr;
-  }
+  MoveFunction( F && f, NonEmptyPayLoadTag )
+    : callPtr
+      {
+        []( void * payLoad, Args&&...args )
+        {
+          return (*static_cast<std::decay_t<F>*>(payLoad))(
+                std::forward<Args>(args)... );
+        }
+      }
+    , payLoad{
+        new typename std::decay_t<F>( std::forward<F>(f) ),
+        []( void * payLoad )
+        {
+          delete static_cast<typename std::decay_t<F>*>(payLoad);
+        }
+      }
+  {}
 
   Res (*callPtr)( void *, Args&&... ) = nullptr;
-  void (*cleanUpPtr)( void * ) = nullptr;
-  void * payLoad = nullptr;
+  std::unique_ptr<void,void(*)(void*)> payLoad;
 };
 
 } // namespace cu
