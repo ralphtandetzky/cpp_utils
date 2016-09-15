@@ -72,44 +72,32 @@ namespace detail
   template <typename ...Fs>
   class OverloadedFunctor;
 
-  template <>
-  class OverloadedFunctor<>
+  template <typename F>
+  class OverloadedFunctor<F> : public F
   {
   public:
-    template <typename ...Ts,
-              typename = std::enable_if_t<false,std::tuple<Ts...>>> // always disabled.
-    void operator()( Ts &&... );
+    OverloadedFunctor( const F &  f ) : F(           f  ) {}
+    OverloadedFunctor(       F && f ) : F( std::move(f) ) {}
+
+    using F::operator();
   };
 
   template <typename F, typename ...Fs>
   class OverloadedFunctor<F,Fs...>
-      : public OverloadedFunctor<Fs...>
+      : public OverloadedFunctor<F>
+      , public OverloadedFunctor<Fs...>
   {
-  private:
-    F f;
-    using Base = OverloadedFunctor<Fs...>;
-
   public:
-    OverloadedFunctor( F && f_, Fs &&... fs )
-      : Base( std::forward<Fs>(fs)... )
-      , f( std::forward<F>(f_) )
+    template <typename    Arg,
+              typename ...Args>
+    OverloadedFunctor( Arg  &&    arg,
+                       Args &&... args )
+      : OverloadedFunctor<F    >( std::forward<Arg >(arg )    )
+      , OverloadedFunctor<Fs...>( std::forward<Args>(args)... )
     {}
 
-    using Base::operator();
-
-    template <typename ...Ts>
-    auto operator()( Ts &&... args )
-      -> decltype( f( std::forward<Ts>(args)... ) )
-    {
-      return f( std::forward<Ts>(args)... );
-    }
-
-    template <typename ...Ts>
-    auto operator()( Ts &&... args ) const
-      -> decltype( f( std::forward<Ts>(args)... ) )
-    {
-      return f( std::forward<Ts>(args)... );
-    }
+    using OverloadedFunctor<F    >::operator();
+    using OverloadedFunctor<Fs...>::operator();
   };
 
 } // namespace detail
@@ -117,7 +105,7 @@ namespace detail
 template <typename ...Fs>
 auto makeOverloadedFunctor( Fs &&... fs )
 {
-  return detail::OverloadedFunctor<Fs...>( std::forward<Fs>(fs)... );
+  return detail::OverloadedFunctor<std::decay_t<Fs>...>( std::forward<Fs>(fs)... );
 }
 
 
