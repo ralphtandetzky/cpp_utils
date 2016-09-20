@@ -32,6 +32,11 @@ public:
     return x_[idx];
   }
 
+  bool operator==( const Point & other )
+  {
+    return x_ == other.x_;
+  }
+
 private:
   std::array<T,N> x_;
 };
@@ -112,6 +117,12 @@ template <typename T, std::size_t N>
 Rect<T,N> operator &( const Rect<T,N> & lhs, const Rect<T,N> & rhs )
 {
   return detail::intersect_impl( lhs, rhs, std::make_index_sequence<N>() );
+}
+
+template <typename T, std::size_t N>
+bool operator==( const Rect<T,N> & lhs, const Rect<T,N> & rhs )
+{
+  return lhs.A() == rhs.A() && lhs.B() == rhs.B();
 }
 
 
