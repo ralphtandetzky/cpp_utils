@@ -53,7 +53,7 @@ public:
   {
   }
 
-  // disable copying
+  // disable copying and moving
   Lambda( const Lambda & ) = delete;
   Lambda & operator=( Lambda ) = delete;
 
@@ -158,7 +158,8 @@ public:
 
   MoveFunction & operator=( MoveFunction other ) noexcept
   {
-    other.swap();
+    other.swap( *this );
+    return *this;
   }
 
   void swap( MoveFunction & other ) noexcept
