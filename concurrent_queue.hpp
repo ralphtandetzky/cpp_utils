@@ -71,6 +71,9 @@ public:
   /// the basic exception guarantee holds.
   T pop()
   {
+    static_assert( std::is_nothrow_move_constructible<T>::value,
+                   "The item type should be move constructible in order to "
+                   "provide the strong exception guarantee." );
     std::list<T> l;
     data( PassUniqueLockTag(), [&l]( Data & data, std::unique_lock<std::mutex> & lock )
     {
