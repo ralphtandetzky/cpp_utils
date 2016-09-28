@@ -5,7 +5,7 @@ QT       -= core gui
 TARGET    = om_channels
 TEMPLATE  = lib
 
-exists( $$PWD/../../common_config.pri ) : include( $$PWD/../../common_config.pri )
+exists( ../../common_config.pri ) : include( ../../common_config.pri )
 
 HEADERS += \
     algorithm.hpp \
