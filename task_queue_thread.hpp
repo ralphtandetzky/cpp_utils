@@ -1,41 +1,38 @@
-/** @file Defines the class @c TaskQueueThread.
+/** @file Defines the class template @c GenericTaskQueueThread.
  * @author Ralph Tandetzky
  */
 
 #pragma once
 
+#include "c++17_features.hpp"
 #include "task_queue.hpp"
 
 #include <thread>
+#include <tuple>
 
 namespace cu
 {
 
 namespace detail
 {
-  template <bool hasExternalQueue>
-  struct GenericTaskQueueThreadData;
-
-  template <>
-  struct GenericTaskQueueThreadData<false>
+  template <bool hasExternalQueue, typename ...WorkerData>
+  struct GenericTaskQueueThreadData
   {
-    TaskQueue queue;
+    TaskQueueWithArgs<WorkerData&...> queue;
     bool done = false;
   };
 
-  template <>
-  struct GenericTaskQueueThreadData<true>
+  template <typename ...WorkerData>
+  struct GenericTaskQueueThreadData<true,WorkerData...>
   {
-    TaskQueue & queue;
-    std::atomic<bool> done{ false };
+    TaskQueueWithArgs<WorkerData&...> & queue;
+    std::atomic<bool> & done;
 
-    explicit GenericTaskQueueThreadData( TaskQueue & queue_ )
+    explicit GenericTaskQueueThreadData(
+        TaskQueueWithArgs<WorkerData&...> & queue_,
+        std::atomic<bool> & done_ )
       : queue(queue_)
-    {}
-    GenericTaskQueueThreadData( const GenericTaskQueueThreadData & other ) = delete;
-    GenericTaskQueueThreadData( GenericTaskQueueThreadData && other )
-      : queue( other.queue )
-      , done( other.done.load() )
+      , done(done_)
     {}
   };
 } // namespace detail
@@ -45,12 +42,29 @@ namespace detail
 /// The constructor starts the dispatching loop automatically. New tasks
 /// are push into the task queue using the function call operator.
 /// The destructor blocks and waits until all tasks are dispatched.
-template <bool hasExternalTaskQueue>
+///
+/// This class has one @c bool template parameter, which tells whether
+/// the used @c TaskQueue is external to the object.
+/// The @c WorkerData template parameter pack can be used to pass
+/// data that is associated with the worker thread to the tasks.
+/// This can be used to optimize execution by caching data, for example.
+///
+/// Most of the time, the alias @c TaskQueueThread for
+/// @c GenericTaskQueueThread<false> is used.
+/// The @c TaskQueueThread contains its own @c TaskQueue.
+///
+/// If a @c TaskQueue should be dispatched by multiple threads, then
+/// @c ExternalTaskQueueThread can be used, which is an alias
+/// for @c GenericTaskQueueThread<true>. You may consider to use
+/// @c TaskQueueThreadPool for convenience in this case.
+template <bool hasExternalTaskQueue,
+          typename ...WorkerData>
 class GenericTaskQueueThread
-    : private detail::GenericTaskQueueThreadData<hasExternalTaskQueue>
+    : private detail::GenericTaskQueueThreadData<hasExternalTaskQueue, WorkerData...>
 {
 private:
-  using Base = detail::GenericTaskQueueThreadData<hasExternalTaskQueue>;
+  using Base = detail::GenericTaskQueueThreadData<hasExternalTaskQueue, WorkerData...>;
+  std::tuple<WorkerData...> workerData;
   std::thread worker;
 
   void startWorker()
@@ -59,25 +73,38 @@ private:
     {
       while (!this->done)
       {
-        this->queue.popAndExecute();
+        cu::apply( [&](auto&&...args)
+          {
+            this->queue.popAndExecute( std::forward<decltype(args)>(args)... );
+          },
+          workerData
+          );
       }
-    });
+    } );
   }
 
 public:
   /// Starts the task dispatching loop an another thread.
   template <bool B = hasExternalTaskQueue,
-            typename std::enable_if<!B,int>::type = 0>
-  explicit GenericTaskQueueThread()
+            typename = typename std::enable_if<!B && B == hasExternalTaskQueue>::type>
+  explicit GenericTaskQueueThread(
+      WorkerData &&... data
+      )
+    : workerData( std::forward_as_tuple( std::forward<WorkerData>(data)... ) )
   {
     startWorker();
   }
 
   /// Starts the task dispatching loop an another thread.
   template <bool B = hasExternalTaskQueue,
-            typename std::enable_if<B,int>::type = 0>
-  explicit GenericTaskQueueThread( TaskQueue & queue )
-    : Base( queue )
+            typename = typename std::enable_if<B && B == hasExternalTaskQueue>::type>
+  explicit GenericTaskQueueThread(
+      TaskQueueWithArgs<WorkerData&...> & queue
+    , std::atomic<bool> & done
+    , WorkerData &&... data
+      )
+    : Base( queue, done )
+    , workerData( std::forward_as_tuple( std::forward<WorkerData>(data)... ) )
   {
     startWorker();
   }
@@ -100,94 +127,12 @@ public:
   /// thread has ended its execution.
   ~GenericTaskQueueThread()
   {
-    (*this)([this](){ this->done = true; });
+    (*this)([this](WorkerData&...){ this->done = true; });
     worker.join();
   }
 };
 
 using TaskQueueThread         = GenericTaskQueueThread<false>;
 using ExternalTaskQueueThread = GenericTaskQueueThread<true >;
-
-
-namespace detail
-{
-  template <typename T>
-  class ScopedArray // fixed size, for non-copyable and non-movable types
-  {
-  private:
-    std::size_t n = 0;
-    T * data = nullptr;
-
-    void destroy( std::size_t i )
-    {
-      while ( --i != std::size_t(-1) )
-      {
-        data[i].~T();
-      }
-    }
-
-    ScopedArray() = default;
-
-  public:
-    template <typename ...Args>
-    ScopedArray( std::size_t nElems, Args &&... args )
-      : ScopedArray()
-    {
-      if ( nElems == 0 )
-        return;
-
-      data = (T*)::operator new[]( nElems * sizeof(T) );
-      for ( ; n < nElems; ++n )
-        new ((void*)(data+n))T( std::forward<Args>(args)... );
-    }
-
-    ~ScopedArray()
-    {
-      destroy( n );
-      delete[] data;
-    }
-  };
-
-} // detail
-
-/// A task dispatching thread class.
-///
-/// The constructor starts the dispatching loop automatically. New tasks
-/// are push into the task queue using the function call operator.
-/// The destructor blocks and waits until all tasks are dispatched.
-class TaskQueueThreadPool
-{
-private:
-  TaskQueue queue;
-  detail::ScopedArray<ExternalTaskQueueThread> workers;
-
-  auto computeNWorkers( std::size_t nThreads )
-  {
-    if ( nThreads != 0 )
-      return nThreads;
-
-    return std::max( std::size_t{1}, std::thread::hardware_concurrency() );
-  }
-
-public:
-  /// Starts the task dispatching loop an another thread.
-  TaskQueueThreadPool( const std::size_t nThreads = 0 )
-    : workers( computeNWorkers(nThreads), queue )
-  {}
-
-  /// Adds a task to the event queue.
-  ///
-  /// @returns A @c std::future for the result.
-  ///
-  /// @example A task is added like this:
-  ///   @code
-  ///     auto result = taskQueueThread( [](){ return doSomething(); } );
-  ///   @endcode
-  template <typename F>
-  auto operator()( F && f )
-  {
-    return queue.push( std::forward<F>(f) );
-  }
-};
 
 } // namespace cu

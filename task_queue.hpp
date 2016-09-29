@@ -1,4 +1,4 @@
-/** @file Defines the class @c TaskQueue.
+/** @file Defines the class @c TaskQueueWithArgs.
  * @author Ralph Tandetzky
  */
 
@@ -15,7 +15,17 @@ namespace cu
 ///
 /// This class is suitable as a task queue for an event loop of a thread
 /// or for dispatching tasks in a threadpool.
-class TaskQueue
+///
+/// Most of the time, the template argument list is empty.
+/// For this case, the type alias @c TaskQueue for @c TaskQueueWithArgs<>
+/// exists.
+///
+/// On occasion, template arguments @c Args can be used to pass a reference
+/// to the data of a worker thread as additional argument to the tasks for
+/// optimization purposes.
+/// This technique can be used to cache data in a worker thread, for example.
+template <typename ...Args>
+class TaskQueueWithArgs
 {
 public:
   /// Puts a task into the queue.
@@ -24,7 +34,7 @@ public:
   template <typename F>
   auto push( F && f )
   {
-    auto task = std::packaged_task<std::result_of_t<F()>()>(
+    auto task = std::packaged_task<std::result_of_t<F(Args...)>(Args...)>(
           std::forward<F>(f) );
     auto result = task.get_future();
     tasks.emplace( std::move(task) );
@@ -32,13 +42,15 @@ public:
   }
 
   /// Pops the oldest element in the queue in a blocking way and executes it.
-  void popAndExecute()
+  void popAndExecute( Args &&... args )
   {
-    tasks.pop()();
+    tasks.pop()( std::forward<Args>(args)... );
   }
 
 private:
-  ConcurrentQueue<std::packaged_task<void()>> tasks;
+  ConcurrentQueue<std::packaged_task<void(Args...)>> tasks;
 };
+
+using TaskQueue = TaskQueueWithArgs<>;
 
 } // namespace cu

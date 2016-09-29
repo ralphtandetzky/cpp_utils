@@ -33,6 +33,7 @@ HEADERS += \
     swap.hpp \
     task_queue.hpp \
     task_queue_thread.hpp \
+    task_queue_thread_pool.hpp \
     units.hpp \
     updater.hpp \
     visitor.hpp \
