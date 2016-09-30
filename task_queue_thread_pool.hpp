@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "functors.hpp"
 #include "task_queue_thread.hpp"
 
 namespace cu
@@ -38,6 +39,13 @@ private:
   }
 
 public:
+  ~TaskQueueThreadPool()
+  {
+    done = true;
+    for ( const auto & worker : workers )
+      (*this)( NoOpFunctor{} );
+  }
+
   /// Starts the task dispatching loops of the thread pool.
   explicit TaskQueueThreadPool(
       std::size_t nThreads,
