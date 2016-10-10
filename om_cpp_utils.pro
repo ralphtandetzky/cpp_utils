@@ -19,6 +19,7 @@ HEADERS += \
     functors_fwd.hpp \
     fwd.hpp \
     geometry.hpp \
+    hexdump.hpp \
     ignore.hpp \
     json.hpp \
     math_helpers.hpp \
