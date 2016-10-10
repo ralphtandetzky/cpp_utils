@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "functors_fwd.hpp"
 #include "swap.hpp"
 
 #include <functional>
@@ -35,9 +36,6 @@ struct ForwardingFunctor
   }
 };
 
-
-template <typename Signature>
-class Lambda;
 
 template <typename Result, typename ... Args>
 class Lambda<Result(Args...)>
@@ -115,9 +113,6 @@ auto makeOverloadedFunctor( Fs &&... fs )
 /// does not require the assigned functors to be copyable, but to be
 /// movable only. Consequently, @c MoveFunction objects are
 /// MoveOnly as well.
-template <typename T>
-class MoveFunction;
-
 template <typename Res,
           typename ...Args>
 class MoveFunction<Res(Args...)>

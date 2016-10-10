@@ -16,6 +16,7 @@ HEADERS += \
     exception.hpp \
     exception_handling.hpp \
     functors.hpp \
+    functors_fwd.hpp \
     fwd.hpp \
     geometry.hpp \
     ignore.hpp \
