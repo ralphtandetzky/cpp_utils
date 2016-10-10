@@ -4,6 +4,9 @@
 #include <ostream>
 #include <string>
 
+namespace cu
+{
+
 template<class elem, class traits>
 inline void hexDump( const void* data,
                      std::size_t length,
@@ -41,3 +44,4 @@ inline void hexDump( const void* data,
     }
 }
 
+} // namespace cu
