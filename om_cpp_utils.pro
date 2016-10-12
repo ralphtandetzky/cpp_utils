@@ -22,6 +22,7 @@ HEADERS += \
     hexdump.hpp \
     ignore.hpp \
     json.hpp \
+    json_fwd.hpp \
     math_helpers.hpp \
     memory_helpers.hpp \
     meta_functor_binder.hpp \
