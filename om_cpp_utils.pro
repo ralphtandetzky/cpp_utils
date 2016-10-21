@@ -15,6 +15,7 @@ HEADERS += \
     cow_ptr.hpp \
     exception.hpp \
     exception_handling.hpp \
+    filters.hpp \
     functors.hpp \
     functors_fwd.hpp \
     fwd.hpp \
@@ -29,6 +30,7 @@ HEADERS += \
     meta_programming.hpp \
     monitor.hpp \
     pimpl_ptr.hpp \
+    polynomials.hpp \
     ranges.hpp \
     rank.hpp \
     scope_guard.hpp \
