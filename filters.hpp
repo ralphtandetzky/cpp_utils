@@ -22,7 +22,8 @@ class Filter
 {
 public:
   Filter( const FilterParams<T,N> & params_ )
-    : params( params_ )
+    : params{ params_.numerator   / params_.denominator[N],
+              params_.denominator / params_.denominator[N] }
   {}
 
   T operator()( T in )
@@ -34,7 +35,6 @@ public:
       out += params.numerator  [N-i] * input [i-1];
       out -= params.denominator[N-i] * output[i-1];
     }
-    out /= params.denominator[N];
 
     // shift input/output queues.
     for ( std::size_t i = N-1; i > 0; --i )
