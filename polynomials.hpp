@@ -154,6 +154,12 @@ auto operator-( Polynomial<T,N> p, T val )
 }
 
 template <typename T, std::size_t N>
+auto operator-( T val, const Polynomial<T,N> & p )
+{
+  return val + (-p);
+}
+
+template <typename T, std::size_t N>
 Polynomial<T,N> & operator+=( Polynomial<T,N> & p, T val )
 {
   p[0] += val;

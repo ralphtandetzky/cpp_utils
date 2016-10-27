@@ -1,9 +1,12 @@
 #pragma once
 
+#include "math_helpers.hpp"
 #include "polynomials.hpp"
 #include "units.hpp"
 
 #include <experimental/optional>
+#include <cmath>
+#include <complex>
 #include <vector>
 
 namespace cu
@@ -52,6 +55,20 @@ private:
   FilterParams<T,N> params;
   std::array<T,N> input{}, output{};
 };
+
+
+template <typename T>
+FilterParams<T,2> makeBiquadFilterFromConjugatePoles(
+    const std::complex<T> & pole )
+{
+  using placeholders::X;
+
+  const auto rp2 = 1/std::norm(pole);
+  return {
+    { 1 },
+    { (T)1 - 2*std::real(pole)*rp2*X + rp2*(X*X) }
+  };
+}
 
 
 // convert from s-plane to z-plane
@@ -183,26 +200,65 @@ CascadedFilterParams<T> makeAnalogButterworthFilterParams(
 ///   It is to be interpreted as relative to the sampling frequency,
 ///   i.e. the cutoff frequency is @c cutoff*samplingFrequency.
 template <typename T>
-CascadedFilterParams<T> makeDigitalButterworthFilterParams(
-    T cutoff,
-    std::size_t degree
-    )
-{
-  const auto analogCutoff = std::tan( cu::pi * cutoff );
-  return fromAnalogToDigital(
-        makeAnalogButterworthFilterParams( analogCutoff, degree ) );
-}
-
-
-/// See @c makeDigitalButterworthFilterParams() for the meaning of the
-/// parameters.
-template <typename T>
 CascadedFilter<T> makeButterworthFilter(
     T cutoff,
     std::size_t degree
     )
 {
-  return toFilter( makeDigitalButterworthFilterParams( cutoff, degree ) );
+  const auto analogCutoff = std::tan( cu::pi * cutoff );
+  return toFilter(
+        fromAnalogToDigital(
+          makeAnalogButterworthFilterParams(
+            analogCutoff, degree ) ) );
+}
+
+
+template <typename T>
+CascadedFilterParams<T> makeAnalogChebyshevType1FilterParams(
+    T cutoff,
+    T epsilon,
+    std::size_t degree
+    )
+{
+  const auto delta = epsilon*(2-epsilon)/cu::sqr(1-epsilon);
+  const auto N = degree;
+  std::vector<FilterParams<T,2>> biquadFilters;
+  biquadFilters.reserve( N/2 );
+  for ( auto n = 0*N; n < N/2; ++n )
+  {
+    const auto i = std::complex<T>{ 0, 1 };
+    const auto theta = ( std::acos( i/delta ) + n*(T)cu::pi ) / (T)N;
+    const auto pole = i * std::cos( theta ) * cutoff;
+    biquadFilters.push_back( makeBiquadFilterFromConjugatePoles( pole ) );
+  }
+  std::experimental::optional<FilterParams<T,1>> bilinearFilter;
+  if ( N%2 == 1 )
+  {
+    using placeholders::X;
+    bilinearFilter = FilterParams<T,1>{
+      { T(1) },
+      { T(1) + 1/(std::sinh(std::asinh(1/delta)/N)*cutoff)*X } };
+  }
+
+  return { std::move( biquadFilters ), std::move( bilinearFilter ) };
+}
+
+
+/// @param cutoff Should be a value that is strictly between 0 and 0.5.
+///   It is to be interpreted as relative to the sampling frequency,
+///   i.e. the cutoff frequency is @c cutoff*samplingFrequency.
+template <typename T>
+CascadedFilter<T> makeChebyshevType1Filter(
+    T cutoff,
+    T epsilon,
+    std::size_t degree
+    )
+{
+  const auto analogCutoff = std::tan( cu::pi * cutoff );
+  return toFilter(
+        fromAnalogToDigital(
+          makeAnalogChebyshevType1FilterParams(
+            analogCutoff, epsilon, degree ) ) );
 }
 
 
