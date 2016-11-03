@@ -128,8 +128,8 @@ public:
     : MoveFunction()
   {}
 
-  MoveFunction( const MoveFunction & ) = delete;
-
+  MoveFunction(       MoveFunction &  ) = delete;
+  MoveFunction( const MoveFunction &  ) = delete;
   MoveFunction( const MoveFunction && ) = delete;
 
   MoveFunction( MoveFunction && other ) noexcept
