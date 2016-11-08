@@ -34,7 +34,7 @@ public:
   template <typename F>
   auto push( F && f )
   {
-    auto task = std::packaged_task<std::result_of_t<F(Args...)>(Args...)>(
+    auto task = std::packaged_task<std::result_of_t<F(Args...)>(Args&&...)>(
           std::forward<F>(f) );
     auto result = task.get_future();
     tasks.emplace( std::move(task) );
@@ -48,7 +48,7 @@ public:
   }
 
 private:
-  ConcurrentQueue<std::packaged_task<void(Args...)>> tasks;
+  ConcurrentQueue<std::packaged_task<void(Args&&...)>> tasks;
 };
 
 using TaskQueue = TaskQueueWithArgs<>;
