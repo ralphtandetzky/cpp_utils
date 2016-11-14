@@ -2,7 +2,7 @@
 # to be found at www.optimeas.de/source_code_license.
 
 QT       -= core gui
-TARGET    = om_channels
+TARGET    = om_cpp_utils
 TEMPLATE  = lib
 
 exists( ../../common_config.pri ) : include( ../../common_config.pri )
