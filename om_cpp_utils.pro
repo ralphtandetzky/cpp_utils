@@ -13,6 +13,7 @@ HEADERS += \
     concurrent.hpp \
     concurrent_queue.hpp \
     cow_ptr.hpp \
+    dependency_thread_pool.hpp \
     exception.hpp \
     exception_handling.hpp \
     filters.hpp \
