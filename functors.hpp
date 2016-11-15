@@ -109,38 +109,40 @@ auto makeOverloadedFunctor( Fs &&... fs )
 }
 
 
-/// This class mimics the behaviour of std::function, except that it
-/// does not require the assigned functors to be copyable, but to be
-/// movable only. Consequently, @c MoveFunction objects are
-/// MoveOnly as well.
-template <typename Res,
+template <bool, typename...>
+class MoveFunctionBase;
+
+template <bool isCallOpConst,
+          typename Res,
           typename ...Args>
-class MoveFunction<Res(Args...)>
+class MoveFunctionBase<isCallOpConst, Res(Args...)>
 {
+  using PayLoadType = std::conditional_t<isCallOpConst, const void, void>;
+
 public:
   // constructors
 
-  MoveFunction() noexcept
-    : payLoad( nullptr, [](void*){} )
+  MoveFunctionBase() noexcept
+    : payLoad( nullptr, [](PayLoadType*){} )
   {}
 
-  MoveFunction( std::nullptr_t ) noexcept
-    : MoveFunction()
+  MoveFunctionBase( std::nullptr_t ) noexcept
+    : MoveFunctionBase()
   {}
 
-  MoveFunction(       MoveFunction &  ) = delete;
-  MoveFunction( const MoveFunction &  ) = delete;
-  MoveFunction( const MoveFunction && ) = delete;
+  MoveFunctionBase(       MoveFunctionBase &  ) = delete;
+  MoveFunctionBase( const MoveFunctionBase &  ) = delete;
+  MoveFunctionBase( const MoveFunctionBase && ) = delete;
 
-  MoveFunction( MoveFunction && other ) noexcept
-    : MoveFunction()
+  MoveFunctionBase( MoveFunctionBase && other ) noexcept
+    : MoveFunctionBase()
   {
     swap( other );
   }
 
   template <typename F>
-  MoveFunction( F && f )
-    : MoveFunction(
+  MoveFunctionBase( F && f )
+    : MoveFunctionBase(
         std::forward<F>(f),
         typename std::conditional_t<
           std::is_empty<std::decay_t<F>>::value,
@@ -155,13 +157,13 @@ public:
 
   // assignment and swap
 
-  MoveFunction & operator=( MoveFunction other ) noexcept
+  MoveFunctionBase & operator=( MoveFunctionBase other ) noexcept
   {
     other.swap( *this );
     return *this;
   }
 
-  void swap( MoveFunction & other ) noexcept
+  void swap( MoveFunctionBase & other ) noexcept
   {
     std::swap( callPtr, other.callPtr );
     std::swap( payLoad, other.payLoad );
@@ -174,13 +176,8 @@ public:
     return callPtr;
   }
 
-  Res operator()( Args...args ) const
-  {
-    if ( *this )
-      return callPtr( payLoad.get(), std::forward<Args>(args)... );
-    else
-      throw std::bad_function_call{};
-  }
+  Res (*callPtr)( PayLoadType *, Args&&... ) = nullptr;
+  std::unique_ptr<PayLoadType,void(*)(PayLoadType*)> payLoad;
 
 private:
   struct EmptyPayLoadTag    {};
@@ -188,41 +185,41 @@ private:
   struct NonEmptyPayLoadTag {};
 
   template <typename F>
-  MoveFunction( F && f, EmptyPayLoadTag )
+  MoveFunctionBase( F && f, EmptyPayLoadTag )
     : callPtr
       {
-        []( void * payLoad, Args&&...args )
+        []( PayLoadType * payLoad, Args&&...args )
         {
           return (*static_cast<std::remove_reference_t<F>*>(payLoad))(
                 std::forward<Args>(args)...);
         }
       }
-    , payLoad{ &f, [](void*){} }
+    , payLoad{ &f, [](PayLoadType*){} }
   {}
 
   template <typename F>
-  MoveFunction( F && f, FunctionPointerTag )
+  MoveFunctionBase( F && f, FunctionPointerTag )
     : callPtr
       {
-        []( void * payLoad, Args&&...args )
+        []( PayLoadType * payLoad, Args&&...args )
         {
           return reinterpret_cast<Res(*)(Args...)>(payLoad)(
                 std::forward<Args>(args)...);
         }
       }
     , payLoad{
-        reinterpret_cast<void*>(static_cast<Res(*)(Args...)>(f)),
-        [](void*){}
+        reinterpret_cast<PayLoadType*>(static_cast<Res(*)(Args...)>(f)),
+        [](PayLoadType*){}
       }
   {
-    static_assert( sizeof(Res(*)(Args...)) == sizeof(void*), "" );
+    static_assert( sizeof(Res(*)(Args...)) == sizeof(PayLoadType*), "" );
   }
 
   template <typename F>
-  MoveFunction( F && f, NonEmptyPayLoadTag )
+  MoveFunctionBase( F && f, NonEmptyPayLoadTag )
     : callPtr
       {
-        []( void * payLoad, Args&&...args )
+        []( PayLoadType * payLoad, Args&&...args )
         {
           return (*static_cast<std::decay_t<F>*>(payLoad))(
                 std::forward<Args>(args)... );
@@ -230,15 +227,86 @@ private:
       }
     , payLoad{
         new typename std::decay_t<F>( std::forward<F>(f) ),
-        []( void * payLoad )
+        []( PayLoadType * payLoad )
         {
           delete static_cast<typename std::decay_t<F>*>(payLoad);
         }
       }
   {}
+};
 
-  Res (*callPtr)( void *, Args&&... ) = nullptr;
-  std::unique_ptr<void,void(*)(void*)> payLoad;
+
+/// This class mimics the behaviour of std::function, except that it
+/// does not require the assigned functors to be copyable, but to be
+/// movable only. Consequently, @c MoveFunction objects are
+/// MoveOnly as well.
+template <typename Res,
+          typename ...Args>
+class MoveFunction<Res(Args...)>
+    : private MoveFunctionBase<false, Res(Args...)>
+{
+  using Base = MoveFunctionBase<false, Res(Args...)>;
+public:
+  using Base::Base;
+
+  MoveFunction() = default;
+  MoveFunction( MoveFunction && ) = default;
+
+  MoveFunction & operator=( MoveFunction other )
+  {
+    swap( other );
+    return *this;
+  }
+
+  void swap( MoveFunction & other )
+  {
+    Base::swap( other );
+  }
+
+  using Base::operator bool;
+
+  Res operator()( Args...args )
+  {
+    if ( *this )
+      return this->callPtr( this->payLoad.get(), std::forward<Args>(args)... );
+    else
+      throw std::bad_function_call{};
+  }
+};
+
+
+template <typename Res,
+          typename ...Args>
+class MoveFunction<Res(Args...) const>
+    : private MoveFunctionBase<true, Res(Args...)>
+{
+  using Base = MoveFunctionBase<true, Res(Args...)>;
+public:
+  using Base::Base;
+
+  MoveFunction() = default;
+  MoveFunction( MoveFunction && ) = default;
+
+  MoveFunction & operator=( MoveFunction other )
+  {
+    swap( other );
+    return *this;
+  }
+
+  void swap( MoveFunction & other )
+  {
+    Base::swap( other );
+  }
+
+  using Base::operator bool;
+
+  Res operator()( Args...args ) const
+  {
+    if ( *this )
+      return this->callPtr( this->payLoad.get(), std::forward<Args>(args)... );
+    else
+      throw std::bad_function_call{};
+  }
 };
 
 } // namespace cu
