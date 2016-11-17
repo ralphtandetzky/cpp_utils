@@ -21,14 +21,14 @@ namespace cu
 //
 // std::size()
 
-template <class Container>
+template <typename Container>
 constexpr auto size( const Container& container ) -> decltype(container.size())
 {
     return container.size();
 }
 
 
-template <class T, std::size_t N>
+template <typename T, std::size_t N>
 constexpr std::size_t size( const T (&)[N] ) noexcept
 {
     return N;
@@ -40,13 +40,13 @@ constexpr std::size_t size( const T (&)[N] ) noexcept
 // std::invoke()
 
 namespace detail {
-  template <class T>
+  template <typename T>
   struct is_reference_wrapper : std::false_type {};
 
-  template <class U>
+  template <typename U>
   struct is_reference_wrapper<std::reference_wrapper<U>> : std::true_type {};
 
-  template <class Base, class T, class Derived, class... Args>
+  template <typename Base, typename T, typename Derived, typename... Args>
   auto INVOKE(T Base::*pmf, Derived&& ref, Args&&... args)
       noexcept(noexcept((std::forward<Derived>(ref).*pmf)(std::forward<Args>(args)...)))
    -> std::enable_if_t<std::is_function<T>::value &&
@@ -56,7 +56,7 @@ namespace detail {
         return (std::forward<Derived>(ref).*pmf)(std::forward<Args>(args)...);
   }
 
-  template <class Base, class T, class RefWrap, class... Args>
+  template <typename Base, typename T, typename RefWrap, typename... Args>
   auto INVOKE(T Base::*pmf, RefWrap&& ref, Args&&... args)
       noexcept(noexcept((ref.get().*pmf)(std::forward<Args>(args)...)))
    -> std::enable_if_t<std::is_function<T>::value &&
@@ -67,7 +67,7 @@ namespace detail {
         return (ref.get().*pmf)(std::forward<Args>(args)...);
   }
 
-  template <class Base, class T, class Pointer, class... Args>
+  template <typename Base, typename T, typename Pointer, typename... Args>
   auto INVOKE(T Base::*pmf, Pointer&& ptr, Args&&... args)
       noexcept(noexcept(((*std::forward<Pointer>(ptr)).*pmf)(std::forward<Args>(args)...)))
    -> std::enable_if_t<std::is_function<T>::value &&
@@ -78,7 +78,7 @@ namespace detail {
         return ((*std::forward<Pointer>(ptr)).*pmf)(std::forward<Args>(args)...);
   }
 
-  template <class Base, class T, class Derived>
+  template <typename Base, typename T, typename Derived>
   auto INVOKE(T Base::*pmd, Derived&& ref)
       noexcept(noexcept(std::forward<Derived>(ref).*pmd))
    -> std::enable_if_t<!std::is_function<T>::value &&
@@ -88,7 +88,7 @@ namespace detail {
         return std::forward<Derived>(ref).*pmd;
   }
 
-  template <class Base, class T, class RefWrap>
+  template <typename Base, typename T, typename RefWrap>
   auto INVOKE(T Base::*pmd, RefWrap&& ref)
       noexcept(noexcept(ref.get().*pmd))
    -> std::enable_if_t<!std::is_function<T>::value &&
@@ -98,7 +98,7 @@ namespace detail {
         return ref.get().*pmd;
   }
 
-  template <class Base, class T, class Pointer>
+  template <typename Base, typename T, typename Pointer>
   auto INVOKE(T Base::*pmd, Pointer&& ptr)
       noexcept(noexcept((*std::forward<Pointer>(ptr)).*pmd))
    -> std::enable_if_t<!std::is_function<T>::value &&
@@ -109,7 +109,7 @@ namespace detail {
         return (*std::forward<Pointer>(ptr)).*pmd;
   }
 
-  template <class F, class... Args>
+  template <typename F, typename... Args>
   auto INVOKE(F&& f, Args&&... args)
       noexcept(noexcept(std::forward<F>(f)(std::forward<Args>(args)...)))
    -> std::enable_if_t<!std::is_member_pointer<std::decay_t<F>>::value,
@@ -119,7 +119,7 @@ namespace detail {
   }
 } // namespace detail
 
-template< class F, class... ArgTypes >
+template< typename F, typename... ArgTypes >
 auto invoke(F&& f, ArgTypes&&... args)
     // exception specification for QoI
     noexcept(noexcept(detail::INVOKE(std::forward<F>(f), std::forward<ArgTypes>(args)...)))
@@ -134,14 +134,14 @@ auto invoke(F&& f, ArgTypes&&... args)
 // std::apply()
 
 namespace detail {
-  template <class F, class Tuple, std::size_t... I>
+  template <typename F, typename Tuple, std::size_t... I>
   constexpr decltype(auto) apply_impl( F&& f, Tuple&& t, std::index_sequence<I...> )
   {
     return cu::invoke(std::forward<F>(f), std::get<I>(std::forward<Tuple>(t))...);
   }
 } // namespace detail
 
-template <class F, class Tuple>
+template <typename F, typename Tuple>
 constexpr decltype(auto) apply(F&& f, Tuple&& t)
 {
   return detail::apply_impl(std::forward<F>(f), std::forward<Tuple>(t),
