@@ -34,6 +34,7 @@ HEADERS += \
     polynomials.hpp \
     ranges.hpp \
     rank.hpp \
+    region_allocator.hpp \
     scope_guard.hpp \
     string_helpers.hpp \
     swap.hpp \
