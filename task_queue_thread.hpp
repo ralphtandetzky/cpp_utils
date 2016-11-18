@@ -15,23 +15,63 @@ namespace cu
 
 namespace detail
 {
+  template <typename ...WorkerData>
+  struct WorkerDataImpl
+  {
+    template <typename ...Args>
+    WorkerDataImpl( Args &&... args )
+      : workerData( std::forward<Args>(args)... )
+    {}
+
+    std::tuple<WorkerData...> workerData;
+  };
+
+  template <typename WorkerData>
+  struct WorkerDataImpl<WorkerData>
+  {
+    template <typename ...Args>
+    WorkerDataImpl( Args &&... args )
+      : workerData( std::forward<Args>(args)... )
+    {}
+
+    WorkerData workerData;
+  };
+
+  template <>
+  struct WorkerDataImpl<>
+  {
+    struct {} workerData;
+  };
+
   template <bool hasExternalQueue, typename ...WorkerData>
   struct GenericTaskQueueThreadData
+      : WorkerDataImpl<WorkerData...>
   {
+  private:
+    using Base = WorkerDataImpl<WorkerData...>;
+
+  public:
+    using Base::Base;
+
     TaskQueueWithArgs<WorkerData&...> queue;
     bool done = false;
   };
 
   template <typename ...WorkerData>
   struct GenericTaskQueueThreadData<true,WorkerData...>
+      : WorkerDataImpl<WorkerData...>
   {
     TaskQueueWithArgs<WorkerData&...> & queue;
     std::atomic<bool> & done;
 
+    template <typename ...Args>
     explicit GenericTaskQueueThreadData(
         TaskQueueWithArgs<WorkerData&...> & queue_,
-        std::atomic<bool> & done_ )
-      : queue(queue_)
+        std::atomic<bool> & done_,
+        Args &&... args
+        )
+      : WorkerDataImpl<WorkerData...>( std::forward<Args>(args)... )
+      , queue(queue_)
       , done(done_)
     {}
   };
@@ -64,8 +104,28 @@ class GenericTaskQueueThread
 {
 private:
   using Base = detail::GenericTaskQueueThreadData<hasExternalTaskQueue, WorkerData...>;
-  std::tuple<WorkerData...> workerData;
   std::thread worker;
+
+  template <typename F,
+            typename Arg>
+  static void apply( F && f, Arg && workerData, cu::Rank<2> )
+  {
+    cu::apply( std::forward<F>(f), std::forward<Arg>(workerData) );
+  }
+
+  template <typename F,
+            typename Arg>
+  static void apply( F && f, Arg && workerData, cu::Rank<1> )
+  {
+    std::forward<F>(f)( std::forward<Arg>(workerData) );
+  }
+
+  template <typename F,
+            typename Arg>
+  static void apply( F && f, Arg &&, cu::Rank<0> )
+  {
+    std::forward<F>(f)();
+  }
 
   void startWorker()
   {
@@ -73,11 +133,12 @@ private:
     {
       while (!this->done)
       {
-        cu::apply( [&](auto&&...args)
+        apply( [&](auto&&...args)
           {
             this->queue.popAndExecute( std::forward<decltype(args)>(args)... );
           },
-          workerData
+          this->workerData,
+          cu::Rank<sizeof...(WorkerData)>{}
           );
       }
     } );
@@ -85,26 +146,42 @@ private:
 
 public:
   /// Starts the task dispatching loop an another thread.
-  template <bool B = hasExternalTaskQueue,
-            typename = typename std::enable_if<!B && B == hasExternalTaskQueue>::type>
+  ///
+  /// This overload is enabled, iff @c hasExternalTaskQueue==false.
+  ///
+  /// @param args should be the constructor arguments of the worker data.
+  /// If @c sizeof...(WorkerData)==0, then no arguments should be passed.
+  /// If @c sizeof...(WorkerData)==1, then whatever constructor arguments
+  /// for the one item should be passed. They will be forwarded.
+  /// If @c sizeof...(WorkerData)>=2, then the number of arguments should
+  /// coincide with it and each arguments will be forwarded to its respective
+  /// worker data item.
+  template <typename ...Args,
+            bool B = hasExternalTaskQueue,
+            typename = typename std::enable_if_t<
+              !B && B == hasExternalTaskQueue>>
   explicit GenericTaskQueueThread(
-      WorkerData &&... data
+      Args &&... args
       )
-    : workerData( std::forward_as_tuple( std::forward<WorkerData>(data)... ) )
+    : Base( std::forward<Args>(args)... )
   {
     startWorker();
   }
 
   /// Starts the task dispatching loop an another thread.
-  template <bool B = hasExternalTaskQueue,
-            typename = typename std::enable_if<B && B == hasExternalTaskQueue>::type>
+  ///
+  /// This overload is enabled, iff @c hasExternalTaskQueue==true.
+  ///
+  /// @param args See the other overload for details.
+  template <typename ...Args,
+            bool B = hasExternalTaskQueue,
+            typename = typename std::enable_if_t<B && B == hasExternalTaskQueue>>
   explicit GenericTaskQueueThread(
       TaskQueueWithArgs<WorkerData&...> & queue
     , std::atomic<bool> & done
-    , WorkerData &&... data
+    , Args &&... args
       )
-    : Base( queue, done )
-    , workerData( std::forward_as_tuple( std::forward<WorkerData>(data)... ) )
+    : Base( queue, done, std::forward<Args>(args)... )
   {
     startWorker();
   }
