@@ -115,6 +115,19 @@ decltype(auto) transform( Tuple && tuple,
 }
 
 
+
+constexpr bool all_of()
+{
+  return true;
+}
+
+template <typename ...T>
+constexpr bool all_of( bool head, T ... tail )
+{
+  return head ? all_of( tail... ) : false;
+}
+
+
 namespace detail
 {
 
