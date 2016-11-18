@@ -41,8 +41,26 @@ class DependencyThreadPool
 {
 public:
   template <typename F>
-  Result<typename std::result_of<F(Args...)>::type> operator()(
-      std::vector<Id> dependencyIds,
+  decltype(auto) operator()(
+      const std::initializer_list<Id> & dependencyIds,
+      F && f )
+  {
+    return run( dependencyIds, std::forward<F>(f) );
+  }
+
+  template <typename F>
+  decltype(auto) operator()(
+      const std::vector<Id> & dependencyIds,
+      F && f )
+  {
+    return run( dependencyIds, std::forward<F>(f) );
+  }
+
+private:
+  template <typename F,
+            typename IdContainer>
+  Result<typename std::result_of<F(Args...)>::type> run(
+      const IdContainer & dependencyIds,
       F && f )
   {
     auto pt = std::packaged_task<std::result_of_t<F(Args...)>(Args&&...)>(
@@ -63,7 +81,6 @@ public:
     return { std::move(future), id };
   }
 
-private:
   struct Node
   {
     Node(
@@ -85,8 +102,9 @@ private:
     Id idCounter = 0;
     std::map<Id,Node> nodes;
 
+    template <typename IdContainer>
     std::size_t updateDependencies(
-        const std::vector<Id> & dependencies,
+        const IdContainer & dependencies,
         Id id )
     {
       auto nDependencies = 0;
