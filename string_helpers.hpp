@@ -75,4 +75,18 @@ inline std::string replaceEndWith(
   return std::move( input );
 }
 
+
+inline std::string getLine( std::istream & stream )
+{
+  std::string line;
+  std::getline( stream, line );
+  return line;
+}
+
+
+inline std::string getLine( std::istream && stream )
+{
+  return getLine( stream );
+}
+
 } // namespace cu
