@@ -124,7 +124,7 @@ private:
   {
     const auto nodeIt = nodes.find(id);
     assert( nodeIt != nodes.end() );
-    assert( nodeIt->nOpenDependencies == 0 );
+    assert( nodeIt->second.nOpenDependencies == 0 );
     workers( [this, nodeIt]
              ( Args &&... args ) mutable
     {
