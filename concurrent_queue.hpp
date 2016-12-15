@@ -85,6 +85,30 @@ public:
     return std::move( l.front() );
   }
 
+  template <typename Rep,
+            typename Period>
+  bool tryPopFor( const std::chrono::duration<Rep, Period> & maxWaitDuration,
+                  T & output )
+  {
+    static_assert( std::is_nothrow_move_assignable<T>::value,
+                   "The item type should be move assignable in order to "
+                   "provide the strong exception guarantee." );
+    std::list<T> l;
+    data( PassUniqueLockTag(), [&]( Data & data, std::unique_lock<std::mutex> & lock )
+    {
+      const auto success = data.condition.wait_for(
+            lock, maxWaitDuration, [&](){ return !data.items.empty(); } );
+      if ( success )
+        l.splice( l.end(), data.items, data.items.begin() );
+    });
+
+    if ( l.empty() )
+      return false;
+
+    output = std::move( l.front() );
+    return true;
+  }
+
 private:
   struct Data
   {
