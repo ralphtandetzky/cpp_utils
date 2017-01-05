@@ -142,6 +142,8 @@ template <typename T>
 class CascadedFilter
 {
 public:
+  CascadedFilter() = default;
+
   CascadedFilter( const CascadedFilterParams<T> & params )
     : biquadFilters( params.biquadFilters.begin(),
                      params.biquadFilters.end() )
