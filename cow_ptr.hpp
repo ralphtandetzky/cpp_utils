@@ -315,9 +315,6 @@ public:
     // other operators //
     /////////////////////
 
-    /// Returns the contained pointer. A deep copy may be performed. May Throw!
-    T * operator->();
-
     /// Returns the contained pointer propagating constness.
     const T * operator->() const noexcept;
 
@@ -467,13 +464,13 @@ cow_ptr<std::decay_t<T>> to_cow_ptr( T && x )
     includes repeating the typename of the wrapped pointer.
   @note Do not forget the semicolon at the end of the line. The template
     argument must be an identifier. */
-#define COW_MODIFY(ptr) ptr &= [&](decltype(ptr.operator->()) ptr)
-//                         ^^ this operator is customized for this purpose
+#define COW_MODIFY(ptr) ptr &= [&]( auto * ptr )
+//                          ^^ this operator is customized for this purpose
 
 /// The const version of @c COW_MODIFY.
 /** It is guaranteed that no internal copy is made, since the @c read()
     member function is called. */
-#define COW_READ(ptr) make_const_ref(ptr) &= [&](decltype(ptr.get()) ptr)
+#define COW_READ(ptr) make_const_ref(ptr) &= [&]( const auto * ptr )
 //                    ^^ this template function is defined later.
 
 // Helper operator for the implementation of COW_MODIFY
@@ -651,15 +648,6 @@ template <typename Func>
 void cow_ptr<T>::read( Func f ) const // noexcept( noexcept( f(get()) ) )
 {
     f( get() );
-}
-
-
-template <typename T>
-T * cow_ptr<T>::operator->()
-{
-    assert( *this );
-    moo();
-    return px;
 }
 
 
