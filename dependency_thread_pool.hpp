@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cassert>
 #include <future>
+#include <map>
 #include <type_traits>
 #include <unordered_map>
 #include <vector>
