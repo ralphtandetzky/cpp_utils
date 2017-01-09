@@ -57,4 +57,11 @@ constexpr double      Ampere = 1.;
 constexpr double milliAmpere = 1.e-3 * Ampere;
 constexpr double microAmpere = 1.e-6 * Ampere;
 
+constexpr double Coulomb = Ampere * second;
+constexpr double milliCoulomb = 1.e-3  * Coulomb;
+constexpr double microCoulomb = 1.e-6  * Coulomb;
+constexpr double nanoCoulomb  = 1.e-9  * Coulomb;
+constexpr double picoCoulomb  = 1.e-12 * Coulomb;
+constexpr double femtoCoulomb = 1.e-15 * Coulomb;
+
 } // namespace cu
