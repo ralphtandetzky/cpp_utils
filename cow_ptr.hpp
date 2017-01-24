@@ -1,52 +1,48 @@
-/** @file Defines the copy-on-write pointer template class cu::cow_ptr.
- * @author Ralph Tandetzky
- */
-
 #pragma once
-
-#include "fwd.hpp"
-#include "rank.hpp"
-#include "visitor.hpp"
 
 #include <atomic>
 #include <cassert>
-#include <memory> // std::default_delete
-#include <type_traits>
+#include <memory>
 
 namespace cu
 {
 
-/// Functor which creates a new copy of an object pointed to.
-struct default_cloner
+class DefaultCloner
 {
 public:
-    template <typename T>
-    T * operator()( const T * p ) const
-    {
-        assert( typeid( *p ) == typeid( const T& ) );
-        return doClone( p, cu::Rank<2>() );
-    }
+  template <typename T>
+  std::unique_ptr<T> operator()( const T & item ) const
+  {
+    return doClone( item, Rank2{} );
+  }
 
 private:
-    template <typename T>
-    auto doClone( const T * p, cu::Rank<2> ) const
-        -> decltype( p->clone().release() )
-    {
-        return p->clone().release();
-    }
+  struct Rank0 {};
+  struct Rank1 : Rank0 {};
+  struct Rank2 : Rank1 {};
 
-    template <typename T>
-    auto doClone( const T * p, cu::Rank<1> ) const
-        -> decltype( ::cu::clone( *p ).release() )
-    {
-        return ::cu::clone( *p ).release();
-    }
+  // Prefer member clone.
+  template <typename T>
+  static auto doClone( const T & item, Rank2 )
+    -> decltype((void)item.clone(),std::unique_ptr<T>{})
+  {
+    return item.clone();
+  }
 
-    template <typename T>
-    T * doClone( const T * p, cu::Rank<0> ) const
-    {
-        return new T(*p);
-    }
+  // Non-member clone is second choice.
+  template <typename T>
+  static auto doClone( const T & item, Rank1 )
+    -> decltype((void)clone(item),std::unique_ptr<T>{})
+  {
+    return clone( item );
+  }
+
+  // Last resort: Clone manually.
+  template <typename T>
+  static auto doClone( const T & item, Rank0 )
+  {
+    return std::make_unique<T>( item );
+  }
 };
 
 
@@ -58,13 +54,14 @@ private:
     and the reference count is at least 2. Here's an example to illustrate
     that.
       @code
-        cow_ptr<X> a( new X );
-        cow_ptr<X> b( a ); // b points to the same object as a internally.
+        cow_ptr<X> a = std::make_unique<X>();
+        cow_ptr<X> b = a; // b points to the same object as a internally.
         cow_ptr<X> c;
-        c = b     // a, b and c all point to the same object internally.
-        b->mutate(); // A new copy of b is created and then mutate is called.
-                     // a and c still point to the same object internally.
-        b->mutateAgain(); // No extra copying is performed here.
+        c = b;     // a, b and c all point to the same object internally.
+        b.modify( [](auto){ ... } ); // A new copy of b is created and then
+                                     // the lambda is called. a and c still
+                                     // point to the same object internally.
+        b.modify( [](auto){ ... } ); // No extra copying is performed here.
       @endcode
 
     There are some remarkable use-cases for cow pointers.
@@ -95,7 +92,8 @@ private:
           @endcode
         This is called the pimpl idiom, or private implementation idiom,
         handle body idiom, or compiler firewall idiom.
-      * For classes with members whose copy-operations are expensive and/or
+      * It implements copy-on-write. Here is a simple use case:
+        For classes with members whose copy-operations are expensive and/or
         which take a lot of space in memory, these members can be wrapped
         in a cow pointer. An example are matrix or image classes whose data
         might be stored in a @c std::vector. The matrix header information
@@ -108,7 +106,7 @@ private:
             public:
                 // ... public interface goes here ... //
             private:
-                size_t nRows, nCols; // can be touched without deep copy.
+                size_t nRows, nCols; // can be modified without deep copy.
                 cow_ptr<std::vector<float>> data; // copy-on-write
             }
           @endcode
@@ -116,17 +114,17 @@ private:
         will usually work just fine.
       * You can add cloning to a class hierarchy from the outside. With
           @code
-            cow_ptr<Base> a( new Derived1 );
-            cow_ptr<Base> b( new Derived2 );
+            cow_ptr<Base> a = std::make_unique<Derived1>;
+            cow_ptr<Base> b = std::make_unique<Derived2>;
             cow_ptr<Base> c;
             c = a; // performs a shallow copy.
-            c->doSomething(); // makes a deep copy of a as a Derived1 class.
-                // There is no slicing involved.
+            c.modify( [](auto){ ...} ); // makes a deep copy of a as a Derived1
+                                        // class. There is no slicing involved.
           @endcode
         you copy @c Base objects polymorphically. The class @c Base can even
         be abstract here. It is only required that @c Derived1 and
         @c Derived2 be @c CopyConstructible.
-      * You can create arrays with elements that retain polymorphic behaviour
+      * You can create arrays with elements that retain polymorphic behavior
         and have genuine value sematics at the same time with
           @code
             std::vector<cow_ptr<Base>> polymorphic_array_with_value_semantics;
@@ -160,28 +158,22 @@ private:
     is at least 2 and then it calls the functor with the stored @c T* pointer.
     Hence the code above would be written like this:
       @code
-        cow_ptr<T> p( new T );
-        cow_ptr<T> q( p );
-        p.modify( [](T*raw){ raw->mutate(); } ); // performes deep copy first.
+        cow_ptr<T> p = std::make_unique<T>();
+        cow_ptr<T> q = p;
+        p.modify( []( auto * raw ){ raw->mutate(); } ); // performes deep copy first.
       @endcode
     It is still possible to let pointers escape and thereby break the
     copy-on-write semantics as mentioned above, but it is harder. Using the
-    macro @c COW_MODIFY the last line can be simplified to
-      @code
-        COW_MODIFY(p) { p->mutate(); };
-      @endcode
-    Unfortunately the semicolon at the end of the line is necessary. For
-    constant operations there's an equivalent macro @c COW_read.
 
-    Similar to @c std::make_shared and the soon coming @c std::make_unique
-    there is an equivalent @c make_cow which makes code faster, more
-    exception-safe and less repetitive. You can write
+    Similar to @c std::make_shared and @c std::make_unique there is an
+    equivalent @c make_cow which makes code faster, more exception-safe
+    and less repetitive. You can write
       @code
         auto p = make_cow<Base,Derived>( ... );
       @endcode
     instead of
       @code
-        cow_ptr<Base> p( new Derived(...) );
+        cow_ptr<Base> p = std::make_unique<Derived>(...);
       @endcode
     which has the advantage that only one allocation with @c new is performed
     instead of two. If @c Base and @c Derived are the same, then you can omit
@@ -189,28 +181,28 @@ private:
     the type. (To see why this is good practice in order to obtain
     exception-safe code see http://herbsutter.com/gotw/_102/)
 
-    Requirements on @c T: The only requirement is that @c T must be
-    @c CopyConstructible and @c operator new() must be accessible, if a
-    @c default_cloner is used.
+    Requirements on @c T: The only requirement is that @c T fulfills one of the
+    following three conditions:
+      * @c T is @c CopyConstructible and @c operator new() is be accessible.
+        (If a @c default_cloner is used.)
 
-    Exception-safety: Construction with a given pointer and various non-const
-    operations have the strong exception guarantee and may throw. All other
-    operations (including copy construction and copy assignment) do not throw.
+    Exception-safety: Construction to a non-empty state and modifying the
+    pointee may throw. All other operations (including copy construction
+    and copy assignment) do not throw!
     This may change the exception guarantees of a class, if cow pointers are
     used as pimpl pointers.
     @c cow_ptr<T> is exception-neutral, which means that all raised exceptions
     propagate out from cow_ptr<T> without being handled or swallowed.
-    Furthermore, @c cow_ptr<T> does not throw itself, but only called code may
+    Furthermore, @c cow_ptr<T> itself does not throw, but only called code may
     throw.
 
     Thread-safety: Here we speak of 'reads' as const operations and 'writes'
     as non-const operations. Each cow pointer object can be safely read by
     multiple threads at the same time as long as no thread is writing to the
-    object. It is safe to use cow pointers in one thread as long as all copies
-    of that cow pointer and any references to the pointed to object stay within
-    that thread.
-    If the clone operation (by default composed of @c T::operator new() and
-    the copy constructor of @c T) of a cow pointer object is thread-safe,
+    object at the same time. It is safe to use cow pointers in one thread as
+    long as all copies of that cow pointer and any references to the pointed
+    to object stay within that thread.
+    If the clone operation of a cow pointer object is thread-safe,
     then the cow pointer can be arbitrarily written to by one thread, even
     if another cow pointer pointing to the same object is accessed by a
     different thread at the same time. If one thread modifies a cow pointer,
@@ -232,713 +224,298 @@ template <typename T>
 class cow_ptr
 {
 public:
-    //////////////////
-    // constructors //
-    //////////////////
+  /// Initialize as @c nullptr.
+  cow_ptr() noexcept = default;
 
-    /// Default constuctor.
-    cow_ptr() noexcept;
+  /// Initialize as @c nullptr.
+  cow_ptr( std::nullptr_t ) noexcept {}
 
-    /// Calls default constructor.
-    cow_ptr( std::nullptr_t ) noexcept;
+  /// Construct from unique_ptr.
+  template <typename U,
+            typename D,
+            typename C = DefaultCloner>
+  cow_ptr( std::unique_ptr<U,D> p,
+           C cloner = DefaultCloner() )
+    : px( p.get() )
+    , pn( RefCounterPtr( std::move(p), std::move(cloner) ) )
+  {}
 
-    /// Copy constructor. Never throws!
-    cow_ptr( const cow_ptr & other ) noexcept;
+  /// Emplace-construct pointee.
+  template <typename U,
+            typename ...Args>
+  static cow_ptr<T> make( Args &&... args )
+  {
+    cow_ptr<T> result;
+    result.pn = RefCounterPtr( EmplaceTag<U>{}, std::forward<Args>(args)... );
+    result.px = result.pn.get();
+    return result;
+  }
 
-    /// Move constructor.
-    cow_ptr( cow_ptr && other ) noexcept;
+  /// No-fail swap.
+  void swap( cow_ptr & other ) noexcept
+  {
+    std::swap( px, other.px );
+    pn.swap( other.pn );
+  }
 
-    /// Obtains ownership of @c p.
-    /** When the reference count drops to zero, then @c deleter(p) will
-        be called. Hence @c deleter(p) must be a valid expression and
-        it must not throw. Moreover, @c cloner(const_cast<const Y *>(p)) must
-        return a pointer that is implicitely convertible to @c T* and may serve
-        as an argument to a copy of @c cloner and so forth. It is the
-        responsibility of @c cloner to create a new copy of @c *p, whenever
-        copying is necessary. Both @c deleter and @c cloner must be
-        @c MoveConstructible and @c CopyConstructible.
+  /// Tells if the reference count is 1.
+  ///
+  /// @note There is no non-const overload on purpose in order to avoid
+  /// accidental deep copies.
+  /// Use @c modify() if you want to call non-const methods on the pointee.
+  bool unique() const noexcept
+  {
+    return pn.unique();
+  }
 
-      @pre If you use the @c default_cloner, make sure that @c Y is the dynamic
-        type of @c *p. Because the @c default_cloner asserts this. This is
-        necessary in order to avoid slicing. */
-    template <typename Y
-            , typename D = std::default_delete<Y>
-            , typename C = default_cloner>
-    explicit cow_ptr( Y * p
-          , D deleter = std::default_delete<Y>()
-          , C cloner = default_cloner() );
+  /// Const-correct raw pointer retrieval.
+  ///
+  /// @note There is no non-const overload on purpose in order to avoid
+  /// accidental deep copies.
+  /// Use @c modify() if you want to call non-const methods on the pointee.
+  const T * get() const noexcept
+  {
+    return px;
+  }
 
-    template <typename Y>
-    cow_ptr( std::unique_ptr<Y> other );
+  /// @c operator-> for const access.
+  ///
+  /// @note There is no non-const overload on purpose in order to avoid
+  /// accidental deep copies.
+  /// Use @c modify() if you want to call non-const methods on the pointee.
+  const T * operator->() const noexcept
+  {
+    assert( px );
+    return px;
+  }
 
-    ////////////////
-    // destructor //
-    ////////////////
+  /// @c operator* for const access.
+  ///
+  /// @note There is no non-const overload on purpose in order to avoid
+  /// accidental deep copies.
+  /// Use @c modify() if you want to call non-const methods on the pointee.
+  const T & operator*() const noexcept
+  {
+    assert( px );
+    return *px;
+  }
 
-    /// Destructor.
-    ~cow_ptr() noexcept;
+  /// Tells if the pointer is not null.
+  operator bool() const noexcept
+  {
+    return px;
+  }
 
-    /////////////////////////
-    // swap and assignment //
-    /////////////////////////
+  /// Write access to the pointee.
+  ///
+  /// @param f A functor that takes a @c T* as parameter.
+  /// The return value of the functor will be returned to the caller.
+  template <typename F>
+  decltype(auto) modify( F && f )
+  {
+    // Perform copy, if not unique.
+    if ( !unique() )
+      pn.clone().swap(*this);
 
-    /// Non-throwing swap.
-    void swap( cow_ptr & other ) noexcept;
-
-    /// Copy assignment. Never throws!
-    cow_ptr & operator=( const cow_ptr & other ) noexcept;
-
-    /// Move assignment.
-    cow_ptr & operator=( cow_ptr && other ) noexcept;
-
-    /////////////////////////////////
-    // access to object pointed to //
-    /////////////////////////////////
-
-    /// Returns the contained pointer propagating constness.
-    const T * get() const noexcept;
-
-    /// Calls @c f(p) where @c p is the contained pointer after making an
-    /// internal copy if necessary.
-    /** An internal copy is made, if the reference count is 2 or greater.
-        This function can be used to make sure the reference count is 1 by
-        passing a functor that does nothing. However, this should normally
-        not be necessary. */
-    template <typename Func>
-    void modify( Func f );
-
-    /// The expression @c p.read(f) is equivalent to @c f(p.get()).
-    template <typename Func>
-    void read( Func f ) const; // noexcept( noexcept( f(get()) ) );
-
-    /////////////////////
-    // other operators //
-    /////////////////////
-
-    /// Returns the contained pointer propagating constness.
-    const T * operator->() const noexcept;
-
-    /// Cast for use in conditional statements
-    explicit operator bool() const noexcept;
-
-    //////////////////////
-    // helper functions //
-    //////////////////////
-
-    // Helper function for implementing make_cow.
-    /* Creates a Y object with constructor argments args and returns a
-        cow pointer to it. */
-    template <typename Y, typename ...Args>
-    static cow_ptr make( Args&&...args );
+    // Apply functor.
+    return f( px );
+  }
 
 private:
-    // This helper function makes a copy of the internal object if the
-    // reference count is 2 or greater.
-    void moo();
+  template <typename U>
+  struct EmplaceTag {};
 
-    ////////////////////
-    // helper classes //
-    ////////////////////
+  /// Abstract reference counter base class.
+  class RefCounterBase
+  {
+  public:
+    // The reference count will be initialized to 1.
+    RefCounterBase() = default;
+    virtual ~RefCounterBase() = default;
+    RefCounterBase( const RefCounterBase & ) = delete;
+    RefCounterBase & operator=( const RefCounterBase & ) = delete;
+    virtual T * get() noexcept = 0;
+    virtual cow_ptr<T> clone() const = 0;
 
-    // Class managing the reference count.
-    /* The responsibility of this class is to manage the reference counter and
-        to delete itself when the reference count drops to zero. */
-    class abstract_counter
+    bool unique() const noexcept
     {
-    public:
-        // Constructs a reference counter.
-        // Postcondition: The reference count is zero.
-        abstract_counter() noexcept;
+      return count.load() == 0;
+    }
 
-        // Precondition. The reference count must be zero.
-        virtual ~abstract_counter() noexcept;
-
-        // Creates a new copy of the wrapping cow ptr whose reference count
-        // is 1.
-        virtual cow_ptr clone() const = 0;
-
-        // Increments the reference count.
-        void acquire() noexcept;
-
-        // Decrements the reference count. Deletes the this object, if the
-        // reference count drops to zero.
-        void release() noexcept;
-
-        // Returns true, iff the reference count is at most 1.
-        bool unique() const noexcept;
-
-    private:
-        // internal reference counter.
-        std::atomic<size_t> n_count;
-    };
-
-    // Reference counter containing owned pointer.
-    /* At destruction (which occurs when the reference count drops to zero)
-        the contained pointer is deleted using the deleter. */
-    template <typename Y, typename D, typename C>
-    class concrete_counter : public abstract_counter
+    void increment() noexcept
     {
-    public:
-        // Takes ownership of @c p.
-        concrete_counter( Y * p, D && deleter, C && cloner );
+      ++count;
+    }
 
-        // Calls @c deleter(p) which are given at construction.
-        virtual ~concrete_counter() noexcept;
-
-        // Copies @c *p using @c cloner.
-        virtual cow_ptr clone() const;
-
-    private:
-        Y * p;
-        D deleter;
-        C cloner;
-    };
-
-    // Reference counter wrapping an @c Y object value.
-    template <typename Y>
-    class wrapping_counter : public abstract_counter
+    void decrement() noexcept
     {
-    public:
-        // Forwards @c args to the constructor of the contained @c Y object.
-        template <typename ...Args>
-        wrapping_counter( Args&&...args );
+      --count;
+    }
 
-        // empty implementation.
-        virtual ~wrapping_counter() noexcept;
+  private:
+    // This field holds the reference count - 1.
+    std::atomic<std::size_t> count{0}; // initial reference count: 1!
+  };
 
-        // Constructs a copy wrapped in a cow ptr using make_cow with the
-        // copy constructor of @c Y.
-        virtual cow_ptr clone() const;
+  /// Smart pointer for ref count pointees.
+  ///
+  /// This class automatically keeps track of the reference count of
+  /// the pointee. The pointee is deleted when the last pointer to it
+  /// is destroyed.
+  class RefCounterPtr
+  {
+  public:
+    ~RefCounterPtr()
+    {
+      if ( !unique() )
+        p->decrement();
+      else
+        delete p;
+    }
 
-        // Returns a @c T pointer to the wrapped object.
-        T * get_ptr() noexcept;
+    RefCounterPtr() = default;
+    RefCounterPtr( const RefCounterPtr & other ) noexcept
+      : p( other.p )
+    {
+      if ( p )
+        p->increment();
+    }
 
-    private:
-        Y y;
-    };
+    RefCounterPtr( RefCounterPtr && other ) noexcept
+    {
+      swap( other );
+    }
 
-    //////////////////
-    // data members //
-    //////////////////
+    RefCounterPtr & operator=( RefCounterPtr other ) noexcept
+    {
+      swap( other );
+      return *this;
+    }
 
-    T * px;
-    abstract_counter * pn;
+    template <typename U,
+              typename D,
+              typename C>
+    RefCounterPtr( std::unique_ptr<U,D> p_, C cloner )
+    {
+      if ( !p_ )
+        return;
+      p = new ExternalRefCounter<U,D,C>( std::move(p_), std::move(cloner) );
+    }
+
+    template <typename U,
+              typename ...Args>
+    RefCounterPtr( EmplaceTag<U>, Args &&... args )
+      : p( new IntrusiveRefCounter<U>( std::forward<Args>(args)... ) )
+    {}
+
+    void swap( RefCounterPtr & other ) noexcept
+    {
+      std::swap( p, other.p );
+    }
+
+    bool unique() const noexcept
+    {
+      return p == nullptr || p->unique();
+    }
+
+    T * get() noexcept
+    {
+      return p->get();
+    }
+
+    cow_ptr<T> clone() const
+    {
+      return p->clone();
+    }
+
+  private:
+    RefCounterBase * p = nullptr;
+  };
+
+  template <typename U,
+            typename D,
+            typename C>
+  class ExternalRefCounter final
+      : public RefCounterBase
+  {
+  public:
+    ExternalRefCounter(
+        std::unique_ptr<U,D> px_,
+        C cloner_ )
+      : px( std::move(px_) )
+      , cloner( std::move(cloner_) )
+    {}
+
+    virtual T * get() noexcept
+    {
+      return px.get();
+    }
+
+    virtual cow_ptr<T> clone() const
+    {
+      return cow_ptr<T>( cloner( *px ), cloner );
+    }
+
+  private:
+    std::unique_ptr<U,D> px;
+    C cloner;
+  };
+
+  template <typename U>
+  class IntrusiveRefCounter final
+      : public RefCounterBase
+  {
+  public:
+    template <typename ...Args>
+    IntrusiveRefCounter( Args &&... args )
+      : item( std::forward<Args>(args)... )
+    {}
+
+    virtual T * get() noexcept
+    {
+      return &item;
+    }
+
+    virtual cow_ptr<T> clone() const
+    {
+      return make<U>( item );
+    }
+
+  private:
+    U item;
+  };
+
+  T * px = nullptr;
+  RefCounterPtr pn;
 };
 
-/// Returns a reference to the object pointed to propagating constness.
-template <typename T>
-const T & operator*( const cow_ptr<T> & p ) noexcept;
 
-/// Exception-safe, efficient way to construct a cow pointer.
-/** The code
-      @code
-        auto p = make_cow<Base,Derived>( ... );
-      @endcode
-    is equivalent to
-      @code
-        cow_ptr<Base> p( new Derived(...) );
-      @endcode */
-template <typename T, typename Y = T, typename ...Args>
-cow_ptr<T> make_cow( Args&&...args );
-
-
-/// Wraps an object into a @c cow_ptr.
-template <typename T>
-cow_ptr<std::decay_t<T>> to_cow_ptr( T && x )
+/// Emplace-construct pointee just like @c std::make_shared().
+template <typename T,
+          typename U = T,
+          typename ...Args>
+cow_ptr<T> make_cow( Args &&... args )
 {
-  return make_cow<std::decay_t<T>>( std::forward<T>(x) );
+  return cow_ptr<T>::template make<U>( std::forward<Args>(args)... );
 }
 
-
-/// Macro to simplify applying functors to the internal pointer of a
-/// cow pointer.
-/** Instead of
-      @code
-        ptr.modify( [&](ClassName * ptr) { ... do something with ptr ... } );
-      @endcode
-    you can write
-      @code
-        COW_MODIFY(ptr) { ... do something with ptr ... };
-      @endcode
-    and thereby avoiding to write the unnecessary lambda hullabaloo which
-    includes repeating the typename of the wrapped pointer.
-  @note Do not forget the semicolon at the end of the line. The template
-    argument must be an identifier. */
-#define COW_MODIFY(ptr) ptr &= [&]( auto * ptr )
-//                          ^^ this operator is customized for this purpose
-
-/// The const version of @c COW_MODIFY.
-/** It is guaranteed that no internal copy is made, since the @c read()
-    member function is called. */
-#define COW_READ(ptr) make_const_ref(ptr) &= [&]( const auto * ptr )
-//                    ^^ this template function is defined later.
-
-// Helper operator for the implementation of COW_MODIFY
-template <typename T, typename Func>
-void operator&=( cow_ptr<T> & p, Func && f );
-
-// Helper operator for the implementation of COW_READ
-template <typename T, typename Func>
-void operator&=( const cow_ptr<T> & p, Func && f );
-
-// Helper template function for the implementation of COW_READ
 template <typename T>
-const T & make_const_ref( T & ref );
-
-/// Non-member version of swap.
-template <typename T>
-void swap( cow_ptr<T> & lhs, cow_ptr<T> & rhs ) noexcept;
-
-//////////////////////////
-// comparison operators //
-//////////////////////////
-
-/// Returns true iff the adresses of the pointed-to objects compare equal.
-template <typename T>
-bool operator==( const cow_ptr<T> & lhs, const cow_ptr<T> & rhs );
-
-/// Returns false iff the adresses of the pointed-to objects compare equal.
-template <typename T>
-bool operator!=( const cow_ptr<T> & lhs, const cow_ptr<T> & rhs );
-
-/// Compares the adresses of the pointed-to objects.
-template <typename T>
-bool operator<( const cow_ptr<T> & lhs, const cow_ptr<T> & rhs );
-
-/// Compares the adresses of the pointed-to objects.
-template <typename T>
-bool operator>( const cow_ptr<T> & lhs, const cow_ptr<T> & rhs );
-
-/// Compares the adresses of the pointed-to objects.
-template <typename T>
-bool operator<=( const cow_ptr<T> & lhs, const cow_ptr<T> & rhs );
-
-/// Compares the adresses of the pointed-to objects.
-template <typename T>
-bool operator>=( const cow_ptr<T> & lhs, const cow_ptr<T> & rhs );
-
-/// Tells, if the pointer is null.
-template <typename T>
-bool operator==( const cow_ptr<T> & p, std::nullptr_t );
-
-/// Tells, if the pointer is null.
-template <typename T>
-bool operator==( std::nullptr_t, const cow_ptr<T> & p );
-
-/// Tells, if the pointer is not null.
-template <typename T>
-bool operator!=( const cow_ptr<T> & p, std::nullptr_t );
-
-/// Tells, if the pointer is not null.
-template <typename T>
-bool operator!=( std::nullptr_t, const cow_ptr<T> & p );
-
-
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- *                                                                           *
- *     IMPLEMENTATION OF cow_ptr's MEMBER FUNCTIONS                          *
- *                                                                           *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
-template <typename T>
-cow_ptr<T>::cow_ptr() noexcept
-    : px(nullptr)
-    , pn(nullptr)
+cow_ptr<T> to_cow_ptr( T data )
 {
+  return cu::make_cow<T>( std::move(data) );
 }
 
-
-template <typename T>
-cow_ptr<T>::cow_ptr( std::nullptr_t ) noexcept
-    : cow_ptr()
-{
-}
-
-
-template <typename T>
-cow_ptr<T>::cow_ptr( const cow_ptr & other ) noexcept
-    : px(other.px)
-    , pn(other.pn)
-{
-    if ( pn )
-        pn->acquire();
-}
-
-
-template <typename T>
-cow_ptr<T>::cow_ptr( cow_ptr && other ) noexcept
-    : px(std::move(other.px))
-    , pn(std::move(other.pn))
-{
-    other.px = nullptr;
-    other.pn = nullptr;
-}
-
-
-template <typename T>
-template <typename Y, typename D, typename C>
-cow_ptr<T>::cow_ptr( Y * p, D deleter, C cloner )
-    : px(p)
-    , pn(new concrete_counter<Y,D,C>( p,std::move(deleter),std::move(cloner) ) )
-{
-//    static_assert( noexcept(deleter(p)), "The deleter must not throw." );
-    pn->acquire();
-}
-
-
-template <typename T>
-template <typename Y>
-cow_ptr<T>::cow_ptr( std::unique_ptr<Y> other )
-  : cow_ptr( other.release() )
-{
-}
-
-
-template <typename T>
-cow_ptr<T>::~cow_ptr() noexcept
-{
-    if ( pn != nullptr )
-        pn->release();
-}
-
-
-template <typename T>
-void cow_ptr<T>::swap( cow_ptr & other ) noexcept
-{
-    std::swap( px, other.px );
-    std::swap( pn, other.pn );
-}
-
-
-template <typename T>
-cow_ptr<T> & cow_ptr<T>::operator=( const cow_ptr & other ) noexcept
-{
-    cow_ptr<T> tmp(other);
-    swap( tmp );
-    return *this;
-}
-
-
-template <typename T>
-cow_ptr<T> & cow_ptr<T>::operator=( cow_ptr && other ) noexcept
-{
-    swap( other );
-    return *this;
-}
-
-
-template <typename T>
-const T * cow_ptr<T>::get() const noexcept
-{
-    return px;
-}
-
-
-template <typename T>
-template <typename Func>
-void cow_ptr<T>::modify( Func f )
-{
-    moo();
-    f( px );
-}
-
-
-template <typename T>
-template <typename Func>
-void cow_ptr<T>::read( Func f ) const // noexcept( noexcept( f(get()) ) )
-{
-    f( get() );
-}
-
-
-template <typename T>
-const T * cow_ptr<T>::operator->() const noexcept
-{
-    assert( *this );
-    return px;
-}
-
-
-template <typename T>
-cow_ptr<T>::operator bool() const noexcept
-{
-    return px != nullptr;
-}
-
-
-template <typename T>
-template <typename Y, typename ...Args>
-cow_ptr<T> cow_ptr<T>::make( Args&&...args )
-{
-    auto pn = new typename cow_ptr<T>::template wrapping_counter<Y>(
-                std::forward<Args>(args)... );
-    pn->acquire();
-    cow_ptr p;
-    p.px = pn->get_ptr();
-    p.pn = pn;
-
-    return p;
-}
-
-
-template <typename T>
-void cow_ptr<T>::moo()
-{
-    if ( px != nullptr && !pn->unique() )
-        pn->clone().swap(*this);
-}
-
-
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- *                                                                           *
- *     IMPLEMENTATION OF CLASS cow_ptr<T>::abstract_counter                  *
- *                                                                           *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
-template <typename T>
-cow_ptr<T>::abstract_counter::abstract_counter() noexcept
-    : n_count(0)
-{
-}
-
-
-template <typename T>
-cow_ptr<T>::abstract_counter::~abstract_counter() noexcept
-{
-    assert( n_count == 0 );
-}
-
-
-template <typename T>
-void cow_ptr<T>::abstract_counter::acquire() noexcept
-{
-    ++n_count;
-}
-
-
-template <typename T>
-void cow_ptr<T>::abstract_counter::release() noexcept
-{
-    if ( --n_count == 0 )
-        delete this;
-}
-
-
-template <typename T>
-bool cow_ptr<T>::abstract_counter::unique() const noexcept
-{
-    return n_count.load() <= 1;
-}
-
-
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- *                                                                           *
- *     IMPLEMENTATION OF CLASS cow_ptr<T>::concrete_counter<Y,D,C>           *
- *                                                                           *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
-template <typename T>
-template <typename Y, typename D, typename C>
-cow_ptr<T>::concrete_counter<Y,D,C>::concrete_counter(
-        Y * p, D && deleter, C && cloner )
-// && does not indicate universal references (as defined by Scott Meyers) here,
-// since D and C are already bound to some types. Hence deleter and cloner are
-// genuine rvalue references and can be safely moved from.
-    : p(p)
-    , deleter( std::move(deleter) )
-    , cloner( std::move(cloner) )
-{
-}
-
-
-template <typename T>
-template <typename Y, typename D, typename C>
-cow_ptr<T>::concrete_counter<Y,D,C>::~concrete_counter() noexcept
-{
-    deleter(p);
-}
-
-
-template <typename T>
-template <typename Y, typename D, typename C>
-cow_ptr<T> cow_ptr<T>::concrete_counter<Y,D,C>::clone() const
-{
-    return cow_ptr<T>(
-        (p != nullptr ? cloner(const_cast<const Y *>(p)) : nullptr),
-        deleter, cloner );
-}
-
-
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- *                                                                           *
- *     IMPLEMENTATION OF CLASS cow_ptr<T>::wrapping_counter<Y>               *
- *                                                                           *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
-template <typename T>
-template <typename Y>
-template <typename ...Args>
-cow_ptr<T>::wrapping_counter<Y>::wrapping_counter( Args&&...args )
-    : y( std::forward<Args>(args)... )
-{
-}
-
-
-template <typename T>
-template <typename Y>
-cow_ptr<T>::wrapping_counter<Y>::~wrapping_counter() noexcept
-{
-}
-
-
-template <typename T>
-template <typename Y>
-cow_ptr<T> cow_ptr<T>::wrapping_counter<Y>::clone() const
-{
-    return make_cow<T,Y>(y);
-}
-
-
-template <typename T>
-template <typename Y>
-T * cow_ptr<T>::wrapping_counter<Y>::get_ptr() noexcept
-{
-    return &y;
-}
-
-
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- *                                                                           *
- *     IMPLEMENTATION OF cow_ptr's NON-MEMBER FUNCTIONS                      *
- *                                                                           *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
-template <typename T>
-const T & operator*( const cow_ptr<T> & p ) noexcept
-{
-    assert( p );
-    return *p.get();
-}
-
-
-namespace detail
-{
-    template <typename T, typename Y, typename ...Args,
-              typename std::enable_if<std::is_copy_constructible<Y>::value,int>::type = 0>
-    cow_ptr<T> make_cow_impl( Rank<1>, Args&&...args )
-    {
-        return cow_ptr<T>::template make<Y>( CU_FWD(args)... );
-    }
-
-    template <typename T, typename Y, typename ...Args>
-    cow_ptr<T> make_cow_impl( Rank<0>, Args&&...args )
-    {
-        return cow_ptr<T>( new Y( CU_FWD(args)... ) );
-    }
-} // namespace detail
-
-template <typename T, typename Y, typename ...Args>
-cow_ptr<T> make_cow( Args&&...args )
-{
-    return detail::make_cow_impl<T,Y>( Rank<1>{}, std::forward<Args>(args)... );
-}
-
-
-template <typename T, typename Func>
-void operator&=( cow_ptr<T> & p, Func && f )
-{
-    p.modify( std::forward<Func>(f) );
-}
-
-
-template <typename T, typename Func>
-void operator&=( const cow_ptr<T> & p, Func && f )
-{
-    p.read( std::forward<Func>(f) );
-}
-
-
-template <typename T>
-const T & make_const_ref( T & ref )
-{
-    return ref;
-}
-
-
+/// No-fail swap.
 template <typename T>
 void swap( cow_ptr<T> & lhs, cow_ptr<T> & rhs ) noexcept
 {
-    lhs.swap( rhs );
+  lhs.swap(rhs);
 }
 
-
 template <typename T>
-bool operator==( const cow_ptr<T> & lhs, const cow_ptr<T> & rhs )
+bool operator==( const cow_ptr<T> & lhs, std::nullptr_t )
 {
-    return lhs.get() == rhs.get();
-}
-
-
-template <typename T>
-bool operator!=( const cow_ptr<T> & lhs, const cow_ptr<T> & rhs )
-{
-    return lhs.get() != rhs.get();
-}
-
-
-template <typename T>
-bool operator<( const cow_ptr<T> & lhs, const cow_ptr<T> & rhs )
-{
-    return lhs.get() < rhs.get();
-}
-
-
-template <typename T>
-bool operator>( const cow_ptr<T> & lhs, const cow_ptr<T> & rhs )
-{
-    return lhs.get() > rhs.get();
-}
-
-
-template <typename T>
-bool operator<=( const cow_ptr<T> & lhs, const cow_ptr<T> & rhs )
-{
-    return lhs.get() <= rhs.get();
-}
-
-
-template <typename T>
-bool operator>=( const cow_ptr<T> & lhs, const cow_ptr<T> & rhs )
-{
-    return lhs.get() >= rhs.get();
-}
-
-
-template <typename T>
-bool operator==( const cow_ptr<T> & p, std::nullptr_t )
-{
-    return p.get() == nullptr;
-}
-
-
-template <typename T>
-bool operator==( std::nullptr_t, const cow_ptr<T> & p )
-{
-    return p.get() == nullptr;
-}
-
-
-template <typename T>
-bool operator!=( const cow_ptr<T> & p, std::nullptr_t )
-{
-    return p.get() != nullptr;
-}
-
-
-template <typename T>
-bool operator!=( std::nullptr_t, const cow_ptr<T> & p )
-{
-    return p.get() != nullptr;
+  return lhs.get() == nullptr;
 }
 
 } // namespace cu
