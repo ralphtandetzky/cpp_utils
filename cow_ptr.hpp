@@ -339,17 +339,17 @@ private:
 
     bool unique() const noexcept
     {
-      return count.load() == 0;
+      return count.load( std::memory_order_relaxed ) == 0;
     }
 
     void increment() noexcept
     {
-      ++count;
+      count.fetch_add( 1, std::memory_order_relaxed );
     }
 
-    void decrement() noexcept
+    int decrement() noexcept
     {
-      --count;
+      return count.fetch_sub( 1, std::memory_order_acq_rel );
     }
 
   private:
@@ -367,9 +367,7 @@ private:
   public:
     ~RefCounterPtr()
     {
-      if ( !unique() )
-        p->decrement();
-      else
+      if ( p != nullptr && p->decrement() == 0 )
         delete p;
     }
 
