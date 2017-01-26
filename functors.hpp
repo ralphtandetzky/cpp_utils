@@ -117,7 +117,10 @@ template <bool isCallOpConst,
           typename ...Args>
 class MoveFunctionBase<isCallOpConst, Res(Args...)>
 {
-  using PayLoadType = std::conditional_t<isCallOpConst, const void, void>;
+  template <typename F>
+  using FunctorType = std::conditional_t<isCallOpConst,
+    const std::decay_t<F>,std::decay_t<F>>;
+  using PayLoadType = FunctorType<void>;
 
 public:
   // constructors
@@ -190,7 +193,7 @@ private:
       {
         []( PayLoadType * payLoad, Args&&...args )
         {
-          return (*static_cast<std::remove_reference_t<F>*>(payLoad))(
+          return (*static_cast<FunctorType<F>*>(payLoad))(
                 std::forward<Args>(args)...);
         }
       }
@@ -221,7 +224,7 @@ private:
       {
         []( PayLoadType * payLoad, Args&&...args )
         {
-          return (*static_cast<std::decay_t<F>*>(payLoad))(
+          return (*static_cast<FunctorType<F>*>(payLoad))(
                 std::forward<Args>(args)... );
         }
       }
@@ -229,7 +232,7 @@ private:
         new typename std::decay_t<F>( std::forward<F>(f) ),
         []( PayLoadType * payLoad )
         {
-          delete static_cast<typename std::decay_t<F>*>(payLoad);
+          delete static_cast<FunctorType<F>*>(payLoad);
         }
       }
   {}
