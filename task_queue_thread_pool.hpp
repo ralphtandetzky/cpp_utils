@@ -7,6 +7,8 @@
 #include "functors.hpp"
 #include "task_queue_thread.hpp"
 
+#include <vector>
+
 namespace cu
 {
 
