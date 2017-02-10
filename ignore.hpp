@@ -17,7 +17,7 @@ namespace cu
 ///     cu::ignore( i, j );
 ///   }
 /// @endcode
-template <typename ...T>
-void ignore( const T &... ) {}
+template <typename ...Ts>
+void ignore( const Ts &... ) {}
 
 } // namespace cu
