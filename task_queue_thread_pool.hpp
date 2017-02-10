@@ -45,7 +45,7 @@ public:
   {
     done = true;
     for ( const auto & worker : workers )
-      (*this)( NoOpFunctor{} );
+      (void)worker, (*this)( NoOpFunctor{} );
   }
 
   /// Starts the task dispatching loops of the thread pool.
