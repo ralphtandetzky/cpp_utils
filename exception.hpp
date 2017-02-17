@@ -87,9 +87,9 @@ struct ThrowSiteInfo
 #define CU_ADD_EXCEPTION_CONTEXT( msg ) \
   CU_ADD_EXCEPTION_CONTEXT_CUSTOM( CU_THROW_EXCEPTION(msg) )
 #define CU_ENFORCE( expr, msg ) \
-  if ( !static_cast<bool>(expr) ) { CU_THROW_EXCEPTION( msg ); }
+  do { if ( !static_cast<bool>(expr) ) { CU_THROW_EXCEPTION( msg ); } } while (false)
 #define CU_ASSERT_THROW( expr, msg ) \
-  if ( !static_cast<bool>(expr) ) { assert(expr); CU_THROW_EXCEPTION( msg ); }
+  do { if ( !static_cast<bool>(expr) ) { assert(expr); CU_THROW_EXCEPTION( msg ); } } while (false)
 
 
 /// A general purpose exception class.
