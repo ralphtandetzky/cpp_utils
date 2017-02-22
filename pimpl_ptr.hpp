@@ -12,6 +12,9 @@ namespace cu
 
 /// This smart pointer class is designed to be used for the pimpl idiom.
 ///
+/// @see https://en.wikibooks.org/wiki/C%2B%2B_Programming/Idioms#Pointer_To_Implementation_.28pImpl.29
+/// for more information on the pimpl idiom.
+///
 /// This smart pointer type behaves like a @c std::unique_ptr, except
 ///   * A living pimpl_ptr never points to null.
 ///     This avoids often needless validity checks.
