@@ -227,6 +227,18 @@ public:
   /// Initialize as @c nullptr.
   cow_ptr() noexcept = default;
 
+  /// Move constructor.
+  cow_ptr( cow_ptr && other ) noexcept { swap( other ); }
+
+  /// Copy constructor.
+  cow_ptr( const cow_ptr & other ) noexcept = default;
+
+  /// Move assignment.
+  cow_ptr & operator=( cow_ptr && other ) noexcept { swap( other ); return *this; }
+
+  /// Copy assignment.
+  cow_ptr & operator=( const cow_ptr & other ) noexcept = default;
+
   /// Initialize as @c nullptr.
   cow_ptr( std::nullptr_t ) noexcept {}
 
