@@ -1,7 +1,10 @@
 /** @file Defines the scope guard macros @c CU_SCOPE_EXIT, @c CU_SCOPE_FAIL
  * and @c CU_SCOPE_SUCCESS.
  *
- * These avoid user defined RAII types and try catch block code
+ * These macros ensure, that certain statements are executed at the end of
+ * the scope. This can be used for clean-up functions.
+ *
+ * These avoid user-defined RAII types and try catch block code
  * cluttering and provide good ways to accomplish exception-safety
  * and especially the strong exception guarantee.
  *
@@ -28,7 +31,7 @@
  * Behind the scenes @c SCOPE_EXIT creates a temporary variable that calls
  * @c deallocate(p) in its destructor. This technique has several advantages:
  *   1. It clarifies intent.
- *   2. Resource acquisition and release is in one place.
+ *   2. Resource acquisition and release are in one place.
  *   3. It avoids a deeply nested control flow.
  * Other than CU_SCOPE_EXIT, there is also the macro @c CU_SCOPE_FAIL with
  * the same syntax, but the code block behind the macro is only executed,
