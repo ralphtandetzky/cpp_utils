@@ -32,6 +32,7 @@ HEADERS += \
     monitor.hpp \
     pimpl_ptr.hpp \
     polynomials.hpp \
+    progress.hpp \
     ranges.hpp \
     rank.hpp \
     region_allocator.hpp \
