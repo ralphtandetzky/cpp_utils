@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <istream>
 #include <string>
 
 namespace cu
