@@ -1,3 +1,6 @@
+// This project underlies the optiMEAS Source Code License which is
+// to be found at www.optimeas.de/source_code_license.
+
 /** @file Define constants for some physical units.
  *
  * Use these constants throughout your code whenever you encounter physical

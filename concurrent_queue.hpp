@@ -1,3 +1,6 @@
+// This project underlies the optiMEAS Source Code License which is
+// to be found at www.optimeas.de/source_code_license.
+
 /** @file Defines the class cu::ConcurrentQueue.
  * @author Ralph Tandetzky
  */

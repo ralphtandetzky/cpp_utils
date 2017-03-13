@@ -1,3 +1,6 @@
+// This project underlies the optiMEAS Source Code License which is
+// to be found at www.optimeas.de/source_code_license.
+
 /** @file Forward declares the template classes @c Lambda and @c MoveFunction.
  *
  * Prefer to include this header file rather than "functors.hpp" in

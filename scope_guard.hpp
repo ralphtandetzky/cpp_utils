@@ -1,3 +1,6 @@
+// This project underlies the optiMEAS Source Code License which is
+// to be found at www.optimeas.de/source_code_license.
+
 /** @file Defines the scope guard macros @c CU_SCOPE_EXIT, @c CU_SCOPE_FAIL
  * and @c CU_SCOPE_SUCCESS.
  *

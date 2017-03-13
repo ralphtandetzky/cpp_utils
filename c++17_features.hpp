@@ -1,3 +1,6 @@
+// This project underlies the optiMEAS Source Code License which is
+// to be found at www.optimeas.de/source_code_license.
+
 /** @file This file defines features available from C++17 onwards.
  *
  * The features are defined in the cu namespace instead of the std namespace.
