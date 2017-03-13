@@ -36,6 +36,7 @@ HEADERS += \
     rank.hpp \
     region_allocator.hpp \
     scope_guard.hpp \
+    slice.hpp \
     string_helpers.hpp \
     swap.hpp \
     task_queue.hpp \
