@@ -1,3 +1,6 @@
+// This project underlies the optiMEAS Source Code License which is
+// to be found at www.optimeas.de/source_code_license.
+
 #pragma once
 
 #include <cstddef>
@@ -9,7 +12,7 @@ namespace cu
 ///
 /// If there are two overloads of a function that only differ in one argument
 /// type, which are @c Rank<N> and @c Rang<M>, and the function is called
-/// given an argument of type @c Rank<K> where @c K>=N and @K>=M, then
+/// given an argument of type @c Rank<K> where @c K>=N and @c K>=M, then
 /// the overload with the larger @c Rank number will be selected by the
 /// compiler.
 ///

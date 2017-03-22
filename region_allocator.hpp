@@ -1,3 +1,6 @@
+// This project underlies the optiMEAS Source Code License which is
+// to be found at www.optimeas.de/source_code_license.
+
 #pragma once
 
 #include "monitor.hpp"
@@ -82,7 +85,7 @@ private:
 
   static MallocPtr makeMallocPtr( std::size_t n )
   {
-    const auto p = (char*)malloc(n);
+    const auto p = static_cast<char*>( malloc(n) );
     if ( !p )
       throw std::bad_alloc{};
     return MallocPtr( p );

@@ -1,3 +1,6 @@
+// This project underlies the optiMEAS Source Code License which is
+// to be found at www.optimeas.de/source_code_license.
+
 #pragma once
 
 #include <array>
@@ -270,7 +273,7 @@ namespace detail
 
 } // namespace detail
 
-/// Returns @c true, iff any of the @c tuple elements evaluates to @true.
+/// Returns @c true, iff any of the @c tuple elements evaluates to @c true.
 template <typename Tuple, typename F>
 bool any_of( Tuple && tuple,
              F && f )

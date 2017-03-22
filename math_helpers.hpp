@@ -1,3 +1,6 @@
+// This project underlies the optiMEAS Source Code License which is
+// to be found at www.optimeas.de/source_code_license.
+
 #pragma once
 
 #include <algorithm>
@@ -20,7 +23,7 @@ T clipped( const T & toBeClipped, const T & lowerBound, const T & upperBound )
 }
 
 
-/// Calculates the square of the passed parameter. 
+/// Calculates the square of the passed parameter.
 template <typename T>
 constexpr auto sqr( T && x )
 {
