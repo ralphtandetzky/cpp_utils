@@ -5,7 +5,9 @@
 
 #include "c++17_features.hpp"
 #include "meta_programming.hpp"
+#include "rank.hpp"
 
+#include <algorithm>
 #include <cassert>
 
 namespace cu

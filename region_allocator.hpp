@@ -85,7 +85,7 @@ private:
 
   static MallocPtr makeMallocPtr( std::size_t n )
   {
-    const auto p = (char*)malloc(n);
+    const auto p = static_cast<char*>( malloc(n) );
     if ( !p )
       throw std::bad_alloc{};
     return MallocPtr( p );

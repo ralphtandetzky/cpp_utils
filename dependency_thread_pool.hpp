@@ -21,7 +21,7 @@ class DependencyThreadPoolBase
 {
 public:
   using Id = std::size_t;
-  static constexpr const Id invalidId = -1;
+  static constexpr const Id invalidId = ~static_cast<Id>(0);
 
   template <typename T>
   struct Result
@@ -111,7 +111,7 @@ private:
         const IdContainer & dependencies,
         Id id )
     {
-      auto nDependencies = 0;
+      std::size_t nDependencies = 0;
       for ( auto dep : dependencies )
       {
         const auto it = nodes.find( dep );

@@ -69,7 +69,7 @@ FilterParams<T,2> makeBiquadFilterFromConjugatePoles(
   const auto rp2 = 1/std::norm(pole);
   return {
     { 1 },
-    { (T)1 - 2*std::real(pole)*rp2*X + rp2*(X*X) }
+    { static_cast<T>(1) - 2*std::real(pole)*rp2*X + rp2*(X*X) }
   };
 }
 
@@ -232,7 +232,7 @@ CascadedFilterParams<T> makeAnalogChebyshevType1FilterParams(
   for ( auto n = 0*N; n < N/2; ++n )
   {
     const auto i = std::complex<T>{ 0, 1 };
-    const auto theta = ( std::acos( i/delta ) + n*(T)cu::pi ) / (T)N;
+    const auto theta = ( std::acos( i/delta ) + n*static_cast<T>(cu::pi) ) / static_cast<T>(N);
     const auto pole = i * std::cos( theta ) * cutoff;
     biquadFilters.push_back( makeBiquadFilterFromConjugatePoles( pole ) );
   }

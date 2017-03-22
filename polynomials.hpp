@@ -195,7 +195,7 @@ namespace placeholders
       return result;
     }
   };
-  XPower<1> X;
+  static const constexpr XPower<1> X{};
 
   template <std::size_t M, std::size_t N>
   auto operator*( XPower<M>, XPower<N> ) { return XPower<M+N>{}; }

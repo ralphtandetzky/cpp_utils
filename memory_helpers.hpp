@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "om_cpp_utils/rank.hpp"
+#include "rank.hpp"
 
 #include <memory>
 #include <type_traits>

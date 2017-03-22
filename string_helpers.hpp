@@ -46,7 +46,7 @@ inline bool endsWith( const std::string & txt, const std::string & end )
   if ( txt.size() < end.size() )
     return false;
   return std::equal( end.begin(), end.end(),
-                     txt.end() - end.size() );
+                     txt.end() - static_cast<std::ptrdiff_t>( end.size() ) );
 }
 
 
@@ -69,14 +69,15 @@ inline std::string replaceEndWith(
     const std::string & newEnd )
 {
   assert( newEnd.size() <= input.size() );
-  auto newEndStart = input.end()-newEnd.size();
+  auto newEndStart = input.end()-static_cast<std::ptrdiff_t>(newEnd.size());
   while ( (*newEndStart & 0xC0 ) == 0x80 ) // care about unicode (UTF-8)
     --newEndStart;
   std::copy( newEnd.begin(),
              newEnd.end  (),
              newEndStart );
-  input.resize( newEndStart + newEnd.size() - input.begin() );
-  return std::move( input );
+  input.resize( static_cast<std::size_t>(
+             newEndStart + static_cast<std::ptrdiff_t>(newEnd.size()) - input.begin() ) );
+  return input;
 }
 
 

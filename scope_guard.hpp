@@ -47,6 +47,9 @@
 
 #pragma once
 
+#include <exception>
+#include <utility>
+
 namespace cu
 {
 
