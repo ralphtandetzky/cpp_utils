@@ -18,7 +18,7 @@ constexpr std::size_t get_tuple_size( const std::tuple<Ts...> & )
 }
 
 template <typename ...Ts>
-constexpr auto make_index_sequence( const std::tuple<Ts...> & t )
+constexpr auto make_index_sequence( const std::tuple<Ts...> & )
 {
   return std::make_index_sequence<sizeof...(Ts)>();
 }
