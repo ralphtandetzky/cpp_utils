@@ -17,10 +17,10 @@ constexpr std::size_t get_tuple_size( const std::tuple<Ts...> & )
   return sizeof...(Ts);
 }
 
-template <typename Tuple>
-constexpr auto make_index_sequence( const Tuple & t )
+template <typename ...Ts>
+constexpr auto make_index_sequence( const std::tuple<Ts...> & )
 {
-  return std::make_index_sequence<get_tuple_size(t)>();
+  return std::make_index_sequence<sizeof...(Ts)>();
 }
 
 
@@ -210,8 +210,8 @@ namespace detail
     F && f;
   };
 
-  template <typename Tuple, typename F, std::size_t ...indexes>
-  decltype(auto) accumulate_impl( Tuple && tuple,
+  template <typename ...Ts, typename F, std::size_t ...indexes>
+  decltype(auto) accumulate_impl( const std::tuple<Ts...> & tuple,
                         F && f,
                         std::index_sequence<indexes...> )
   {
@@ -230,7 +230,7 @@ namespace detail
     //   @endcode
     // is perfectly valid.
     return ReverseAccumulator<F>(std::forward<F>(f))(
-          std::get<get_tuple_size(tuple)-indexes-1>(std::forward<Tuple>(tuple))... );
+          std::get<sizeof...(Ts)-indexes-1>( tuple )... );
   }
 
 } // namespace detail
