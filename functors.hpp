@@ -58,7 +58,7 @@ public:
   Lambda( const Lambda & ) = delete;
   Lambda & operator=( Lambda ) = delete;
 
-  Result operator()( Args &&... args ) const
+  Result operator()( Args ... args ) const
   {
     return f( workLoad, std::forward<Args>(args)... );
   }
