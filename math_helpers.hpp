@@ -30,4 +30,13 @@ constexpr auto sqr( T && x )
   return x*x;
 }
 
+
+/// Calculates the sign of a value.
+///
+/// Works for both integers and floating point types.
+template <typename T>
+int sgn( T val ) {
+    return ( T(0) < val ) - ( val < T(0) );
+}
+
 } // namespace cu
