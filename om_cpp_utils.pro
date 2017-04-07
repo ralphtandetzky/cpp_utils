@@ -35,6 +35,7 @@ HEADERS += \
     progress.hpp \
     ranges.hpp \
     rank.hpp \
+    rational.hpp \
     region_allocator.hpp \
     scope_guard.hpp \
     slice.hpp \
