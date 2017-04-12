@@ -9,9 +9,23 @@ StaticLibrary
     {
         Depends { name: "cpp" }
         cpp.cxxLanguageVersion: "c++14"
-        cpp.defines: [ "OM_STATIC_BUILD" ]
-        cpp.windowsApiCharacterSet: "unicode"
+        cpp.defines: [
+            "QT_DISABLE_DEPRECATED_BEFORE=0x050800",
+            "BOOST_NO_AUTO_PTR",
+            //"BOOST_SYSTEM_NO_DEPRECATED",
+            "OM_STATIC_BUILD"
+        ]
+        cpp.windowsApiCharacterSet: "mbcs"
     }
+
+    property bool link_statically: true
+    cpp.defines: [
+        "QT_DISABLE_DEPRECATED_BEFORE=0x050800",
+        "BOOST_NO_AUTO_PTR",
+        //"BOOST_SYSTEM_NO_DEPRECATED",
+        "OM_STATIC_BUILD"
+    ]
+    cpp.windowsApiCharacterSet: "mbcs"
 
     files: [
         "algorithm.hpp",
