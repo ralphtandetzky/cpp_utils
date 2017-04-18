@@ -4,6 +4,7 @@
 #pragma once
 
 #include "scope_guard.hpp"
+#include "slice.hpp"
 #include "task_queue_thread_pool.hpp"
 
 #include <algorithm>
@@ -12,7 +13,6 @@
 #include <map>
 #include <type_traits>
 #include <unordered_map>
-#include <vector>
 
 namespace cu
 {
@@ -39,32 +39,34 @@ public:
 };
 
 
+/// A threadpool for tasks that depend upon each other.
+///
+/// The threadpool will only start the execution of a task, if all the tasks
+/// it depends on have been finished.
+/// When the client issues a task, then an @c std::future<T> and a task id
+/// will be returned in a @c DependencyThreadPoolBase::Result<T> structure.
+/// The returned id can be used as dependency for other subsequent tasks.
+/// Therefore cyclic dependencies are impossible by design.
+///
+/// The template type arguments are the arguments that will be passed to the
+/// tasks and are data elements of the threadpool just as in
+/// @c TaskQueueThreadPool.
 template <typename ...Args>
 class DependencyThreadPool
     : public DependencyThreadPoolBase
 {
 public:
+  /// Schedules a task.
+  ///
+  /// The task will be executed only after all tasks it depends upon have
+  /// been finished.
+  /// @param dependencyIds specifies the tasks upon which the new task depends.
+  /// @returns A struct with a member @c future which designates the
+  /// asynchroneous result and a member @c id which identifies the task with a
+  /// unique id. This id can be used as dependency id for new tasks.
   template <typename F>
-  decltype(auto) operator()(
-      const std::initializer_list<Id> & dependencyIds,
-      F && f )
-  {
-    return run( dependencyIds, std::forward<F>(f) );
-  }
-
-  template <typename F>
-  decltype(auto) operator()(
-      const std::vector<Id> & dependencyIds,
-      F && f )
-  {
-    return run( dependencyIds, std::forward<F>(f) );
-  }
-
-private:
-  template <typename F,
-            typename IdContainer>
-  Result<typename std::result_of<F(Args...)>::type> run(
-      const IdContainer & dependencyIds,
+  Result<typename std::result_of<F(Args...)>::type> operator()(
+      const cu::Slice<const Id> dependencyIds,
       F && f )
   {
     auto pt = std::packaged_task<std::result_of_t<F(Args...)>(Args&&...)>(
@@ -85,6 +87,7 @@ private:
     return { std::move(future), id };
   }
 
+private:
   struct Node
   {
     Node(
@@ -106,9 +109,8 @@ private:
     Id idCounter = 0;
     std::map<Id,Node> nodes;
 
-    template <typename IdContainer>
     std::size_t updateDependencies(
-        const IdContainer & dependencies,
+        const cu::Slice<const Id>  dependencies,
         Id id )
     {
       std::size_t nDependencies = 0;
