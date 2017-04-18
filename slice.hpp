@@ -4,6 +4,7 @@
 #pragma once
 
 #include <cstddef>
+#include <initializer_list>
 #include <type_traits>
 #include <stdexcept>
 
@@ -27,6 +28,10 @@ struct Slice
 
     Slice( T * first, T * last ) noexcept
       : Slice( first, last-first )
+    {}
+
+    Slice( std::initializer_list<T> list )
+      : Slice( list.begin(), list.size() )
     {}
 
     template <typename Container,
