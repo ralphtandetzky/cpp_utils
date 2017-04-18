@@ -31,7 +31,7 @@ namespace detail
       std::enable_if<
         is_unique_ptr<typename std::decay<T>::type>::value,
         std::shared_ptr<
-          typename std::decay<decltype(x)>::type
+          typename std::decay<decltype(*x)>::type
         >
       >::type
   {
@@ -47,7 +47,7 @@ namespace detail
 } // namespace detail
 
 template <typename T>
-std::shared_ptr<std::decay_t<T>> to_shared_ptr( T && x )
+auto to_shared_ptr( T && x )
 {
   return detail::to_shared_ptr_impl( std::forward<T>(x), Rank<1>() );
 }
