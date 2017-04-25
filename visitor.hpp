@@ -15,36 +15,40 @@
 namespace cu
 {
 
-template <typename ...Ts>
-class Visitor;
-
-template <>
-class Visitor<>
+namespace detail
 {
-protected:
-  void visit() = delete;
-};
 
-template <typename T, typename ...Ts>
-class Visitor<T,Ts...> : public Visitor<Ts...>
-{
-public:
-  virtual ~Visitor() = default;
+  template <typename ...Ts>
+  class Visitor;
 
-  using Visitor<Ts...>::visit;
-  virtual void visit( T& ) = 0;
-};
+  template <>
+  class Visitor<>
+  {
+  protected:
+    void visit() = delete;
+  };
 
-template <typename ...Ts>
-using ConstVisitor = Visitor<const Ts...>;
+  template <typename T, typename ...Ts>
+  class Visitor<T,Ts...> : public Visitor<Ts...>
+  {
+  public:
+    virtual ~Visitor() = default;
 
+    using Visitor<Ts...>::visit;
+    virtual void visit( T& ) = 0;
+  };
+
+  template <typename ...Ts>
+  using ConstVisitor = Visitor<const Ts...>;
+
+} // namespace detail
 
 template <typename ...Ts>
 class VisitableBase
 {
 public:
-  using Visitor = Visitor<Ts...>;
-  using ConstVisitor = ConstVisitor<Ts...>;
+  using Visitor = detail::Visitor<Ts...>;
+  using ConstVisitor = detail::ConstVisitor<Ts...>;
 
   virtual ~VisitableBase() = default;
 
@@ -188,7 +192,7 @@ template <typename ...Ts, typename F>
 auto visit( VisitableBase<Ts...> & visitable, F && f )
 {
   using Result = std::common_type_t<std::result_of_t<F&&(Ts&)>...>;
-  detail::VisitorImpl<F, Result, Visitor<Ts...>, Ts...> visitor{
+  detail::VisitorImpl<F, Result, detail::Visitor<Ts...>, Ts...> visitor{
     std::forward<F>(f) };
   visitable.accept( visitor );
   return visitor.getResult();
@@ -198,7 +202,7 @@ template <typename ...Ts, typename F>
 auto visit( const VisitableBase<Ts...> & visitable, F && f )
 {
   using Result = std::common_type_t<std::result_of_t<F&&(Ts&)>...>;
-  detail::VisitorImpl<F, Result, ConstVisitor<Ts...>, const Ts...> visitor{
+  detail::VisitorImpl<F, Result, detail::ConstVisitor<Ts...>, const Ts...> visitor{
     std::forward<F>(f) };
   visitable.accept( visitor );
   return visitor.getResult();
