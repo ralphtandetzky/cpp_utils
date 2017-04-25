@@ -11,6 +11,7 @@
 
 #include <cassert>
 #include <condition_variable>
+#include <experimental/optional>
 #include <list>
 #include <type_traits>
 
@@ -88,13 +89,18 @@ public:
     return std::move( l.front() );
   }
 
+  /// Pops an item off the queue, blocking for at most @c maxWaitDuration.
+  ///
+  /// If the queue is empty for @c maxWaitDuration, then
+  /// @c std::experimental::nullopt is returned.
+  /// Otherwise this function returns the popped element.
   template <typename Rep,
             typename Period>
-  bool tryPopFor( const std::chrono::duration<Rep, Period> & maxWaitDuration,
-                  T & output )
+  std::experimental::optional<T> tryPopFor(
+      const std::chrono::duration<Rep, Period> & maxWaitDuration )
   {
-    static_assert( std::is_nothrow_move_assignable<T>::value,
-                   "The item type should be move assignable in order to "
+    static_assert( std::is_nothrow_move_constructible<T>::value,
+                   "The item type should be move constructible in order to "
                    "provide the strong exception guarantee." );
     std::list<T> l;
     data( PassUniqueLockTag(), [&]( Data & data, std::unique_lock<std::mutex> & lock )
@@ -106,10 +112,28 @@ public:
     });
 
     if ( l.empty() )
-      return false;
+      return std::experimental::nullopt;
 
-    output = std::move( l.front() );
-    return true;
+    return std::move( l.front() );
+  }
+
+  /// Returns the front item in the queue, if it is non-empty.
+  ///
+  /// Otherwise it returns @c std::experimental::nullopt.
+  ///
+  /// @note This function calls the copy constructor of @c T under the lock,
+  /// if the queue is not empty.
+  /// Therefore, this function should only be used, if the copy constructor
+  /// is cheap (to avoid contention) and does not invoke other locks
+  /// (to avoid dead-lock).
+  std::experimental::optional<T> tryGetFront() const
+  {
+    return data( [&]( const Data & data ) -> std::experimental::optional<T>
+    {
+      if ( data.items.empty() )
+        return std::experimental::nullopt;
+      return data.items.front();
+    } );
   }
 
 private:
