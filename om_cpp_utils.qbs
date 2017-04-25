@@ -59,6 +59,7 @@ StaticLibrary
         "slice.hpp",
         "string_helpers.hpp",
         "swap.hpp",
+        "task_blocker.hpp",
         "task_queue.hpp",
         "task_queue_thread.hpp",
         "task_queue_thread_pool.hpp",
