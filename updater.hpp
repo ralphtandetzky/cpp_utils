@@ -7,9 +7,9 @@
 
 #pragma once
 
+#include "functors.hpp"
 #include "monitor.hpp"
 #include <condition_variable>
-#include <functional>
 
 namespace cu
 {
@@ -22,7 +22,7 @@ namespace cu
 /// If there is already a task scheduled and a new one comes in,
 /// then the scheduled task is replaced by the new one which will be executed
 /// in its stead.
-template <typename Executor>
+template <typename Executor, typename ... TaskArgs>
 class Updater
 {
 private:
@@ -30,7 +30,7 @@ private:
 
   struct Data
   {
-    std::function<void()> task;
+    MoveFunction<void(TaskArgs&&...)> task;
     bool running = false;
     bool done = false;
     std::condition_variable condition;
@@ -39,9 +39,9 @@ private:
 
   void runExecutor()
   {
-    executor( [this]()
+    executor( [this]( TaskArgs ... taskArgs )
     {
-      std::function<void()> task;
+      MoveFunction<void(TaskArgs&&...)> task;
       data( [&]( Data & data )
       {
         assert( data.running );
@@ -49,7 +49,7 @@ private:
       });
 
       if ( task )
-        task();
+        task( std::forward<TaskArgs>(taskArgs)... );
 
       const auto runAgain = data( []( Data & data )
       {
@@ -78,7 +78,7 @@ public:
   {
     // The following is executed unconditionally, since the client of the
     // class cannot push further tasks that might overwrite this one.
-    (*this)( [this]()
+    (*this)( [this]( const TaskArgs &... )
     {
       data( []( Data & data )
       {
@@ -100,14 +100,14 @@ public:
   template <typename F>
   void operator()( F && f )
   {
-    std::function<void()> task(std::forward<F>(f));
+    MoveFunction<void(TaskArgs&&...)> task(std::forward<F>(f));
     const auto previouslyRunning = data( [&]( Data & data )
     {
       task.swap( data.task );
       const auto previouslyRunning = data.running;
       data.running = true;
       return previouslyRunning;
-    });
+    } );
     if ( !previouslyRunning )
       runExecutor();
   }
