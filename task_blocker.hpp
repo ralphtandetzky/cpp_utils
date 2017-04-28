@@ -12,8 +12,11 @@ namespace cu
 class TaskBlocker
 {
 public:
-  TaskBlocker( std::chrono::steady_clock::duration maxLatency )
+  explicit TaskBlocker(
+      std::chrono::steady_clock::duration maxLatency,
+      std::size_t maxQueueLength = 0 )
     : maxLatency_( std::move( maxLatency ) )
+    , maxQueueLength_( maxQueueLength )
   {}
 
   void push()
@@ -23,8 +26,11 @@ public:
     {
       data.conditionVariable.wait( lock, [&]()
       {
-        return data.pushTimes.empty() ||
-               data.pushTimes.front() >= std::chrono::steady_clock::now() - maxLatency_;
+        return
+            ( maxQueueLength_ == 0 ||
+              data.pushTimes.size() < maxQueueLength_ ) &&
+            ( data.pushTimes.empty() ||
+              data.pushTimes.front() >= std::chrono::steady_clock::now() - maxLatency_ );
       } );
       data.pushTimes.push_back( std::chrono::steady_clock::now() );
     } );
@@ -48,6 +54,7 @@ private:
 
   cu::Monitor<Data> data_;
   const std::chrono::steady_clock::duration maxLatency_;
+  const std::size_t maxQueueLength_ = 0;
 };
 
 
