@@ -1,5 +1,6 @@
 #pragma once
 
+#include "cow_ptr.hpp"
 #include "functors.hpp"
 #include "meta_programming.hpp"
 
@@ -226,8 +227,8 @@ namespace detail
   {
     return []( const auto & item )
     {
-      return std::unique_ptr<VisitableTemplate>(
-            std::make_unique<std::decay_t<decltype(item)>>( item ) );
+      return cu::make_cow<VisitableTemplate,
+                          std::decay_t<decltype(item)>>( item );
     };
   }
 
@@ -236,8 +237,7 @@ namespace detail
   {
     return []( const auto & item )
     {
-      return std::unique_ptr<Base>(
-            std::make_unique<std::decay_t<decltype(item)>>( item ) );
+      return cu::make_cow<Base,std::decay_t<decltype(item)>>( item );
     };
   }
 
