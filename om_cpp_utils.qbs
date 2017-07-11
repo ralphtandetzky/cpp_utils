@@ -29,6 +29,7 @@ StaticLibrary
 
     files: [
         "algorithm.hpp",
+        "array_arith.hpp",
         "c++17_features.hpp",
         "concurrent.hpp",
         "concurrent_queue.hpp",
@@ -48,6 +49,8 @@ StaticLibrary
         "meta_functor_binder.hpp",
         "meta_programming.hpp",
         "monitor.hpp",
+        "optimize_differential_evolution.hpp",
+        "optimize_nelder_mead.hpp",
         "pimpl_ptr.hpp",
         "polynomials.hpp",
         "progress.hpp",
