@@ -4,6 +4,9 @@
 
 #include <algorithm>
 
+namespace cu
+{
+
 template <typename F,
           typename T,
           std::size_t N>
@@ -92,3 +95,5 @@ void optimizeNelderMead(
         sort();
     }
 }
+
+} // namespace cu

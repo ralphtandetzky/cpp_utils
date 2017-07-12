@@ -16,6 +16,9 @@
 #include <array>
 #include <utility>
 
+namespace cu
+{
+
 namespace array_arith
 {
 
@@ -30,7 +33,7 @@ namespace detail
     {
         return { lhs[idxs]+rhs[idxs]... };
     }
-} // detail
+} // namespace detail
 
 template <typename T,
           std::size_t N>
@@ -51,7 +54,7 @@ namespace detail
     {
         return { lhs[idxs]-rhs[idxs]... };
     }
-} // detail
+} // namespace detail
 
 template <typename T,
           std::size_t N>
@@ -73,7 +76,7 @@ namespace detail
     {
         return { lhs*rhs[idxs]... };
     }
-} // detail
+} // namespace detail
 
 template <typename T1,
           typename T2,
@@ -97,7 +100,7 @@ namespace detail
         const auto reciprocal = T1(1) / rhs;
         return { lhs[idxs]*reciprocal... };
     }
-} // detail
+} // namespace detail
 
 template <typename T1,
           typename T2,
@@ -108,4 +111,13 @@ std::array<T1,N> operator/( const std::array<T1,N> & lhs,
     return detail::div_impl( lhs, rhs, std::make_index_sequence<N>{} );
 }
 
-} // detail_array_arith
+template <typename T,
+          std::size_t N>
+void assign( std::array<T,N> & lhs, std::array<T,N> && rhs )
+{
+    lhs = std::move(rhs);
+}
+
+} // namespace array_arith
+
+} // namespace cu

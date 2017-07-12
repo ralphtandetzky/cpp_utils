@@ -1,19 +1,22 @@
 #pragma once
 
 #include "array_arith.hpp"
+#include "vector_arith.hpp"
 
 #include <algorithm>
 #include <cassert>
 #include <random>
 #include <vector>
 
+namespace cu
+{
+
 template <typename F,
-          typename T,
-          std::size_t N,
+          typename Vector,
           typename RNG>
 void optimizeDifferentialEvolution(
         F && f,
-        std::vector<std::array<T,N>> swarm,
+        std::vector<Vector> swarm,
         RNG & rng,
         std::size_t nSteps
         )
@@ -25,6 +28,7 @@ void optimizeDifferentialEvolution(
         values.push_back( f(x) );
 
     std::uniform_int_distribution<std::size_t> dist(0,size-1);
+    Vector y;
     while ( nSteps-- != 0 )
     {
         std::size_t i=0;
@@ -37,13 +41,16 @@ void optimizeDifferentialEvolution(
         do { l = dist(rng); } while ( i == l || j == l || k == l );
         auto &       x = swarm[i];
         using namespace array_arith;
-        const auto   y = swarm[j] + swarm[k] - swarm[l];
+        using namespace vector_arith;
+        assign( y, swarm[j] + swarm[k] - swarm[l] );
         auto &     f_x = values[i];
         const auto f_y = f(y);
         if ( f_y < f_x )
         {
-            x   = y;
+            x.swap(y);
             f_x = f_y;
         }
     }
 }
+
+} // namespace cu

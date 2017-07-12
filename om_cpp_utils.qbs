@@ -68,6 +68,7 @@ StaticLibrary
         "task_queue_thread_pool.hpp",
         "units.hpp",
         "updater.hpp",
+        "vector_arith.hpp",
         "visitor.hpp",
     ]
 }
