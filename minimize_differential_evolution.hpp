@@ -14,9 +14,9 @@ namespace cu
 template <typename F,
           typename Vector,
           typename RNG>
-void optimizeDifferentialEvolution(
+void minimizeDifferentialEvolution(
         F && f,
-        std::vector<Vector> swarm,
+        std::vector<Vector> & swarm,
         RNG & rng,
         std::size_t nSteps
         )

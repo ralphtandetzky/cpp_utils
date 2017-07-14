@@ -10,9 +10,9 @@ namespace cu
 template <typename F,
           typename T,
           std::size_t N>
-void optimizeNelderMead(
+void minimizeNelderMead(
         F && f,
-        std::array<std::array<T,N>,N+1> swarm,
+        std::array<std::array<T,N>,N+1> & swarm,
         std::size_t nSteps
         )
 {
