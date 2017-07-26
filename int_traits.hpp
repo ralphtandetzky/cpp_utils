@@ -51,4 +51,7 @@ template <std::size_t nBits,
           bool isSigned = true>
 using BuildInInt = typename detail::BuildInIntImpl<nBits,isSigned>::type;
 
+template <typename IntT>
+using DoubleSizeInt = BuildInInt<IntTraits<IntT>::nBits*2,IntTraits<IntT>::isSigned>;
+
 } // namespace cu
