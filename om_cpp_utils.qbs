@@ -44,6 +44,7 @@ StaticLibrary
         "geometry.hpp",
         "hexdump.hpp",
         "ignore.hpp",
+        "int_traits.hpp",
         "math_helpers.hpp",
         "memory_helpers.hpp",
         "meta_functor_binder.hpp",
