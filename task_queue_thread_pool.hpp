@@ -9,7 +9,7 @@
 
 #include "functors.hpp"
 #include "task_queue_thread.hpp"
-
+#include <algorithm>
 #include <vector>
 
 namespace cu
@@ -40,7 +40,7 @@ private:
     if ( nThreads != 0 )
       return nThreads;
 
-    return std::max( std::size_t{1}, std::thread::hardware_concurrency() );
+    return std::max( std::size_t{1}, std::size_t(std::thread::hardware_concurrency()) );
   }
 
 public:

@@ -7,7 +7,7 @@
 #include "polynomials.hpp"
 #include "units.hpp"
 
-#include <experimental/optional>
+#include "optional.hpp"
 #include <cmath>
 #include <complex>
 #include <vector>
@@ -117,7 +117,7 @@ template <typename T>
 struct CascadedFilterParams
 {
   std::vector<FilterParams<T,2>> biquadFilters;
-  std::experimental::optional<FilterParams<T,1>> bilinearFilter;
+  nonstd::optional<FilterParams<T,1>> bilinearFilter;
 
   template <typename F>
   void iterate( F && f )
@@ -166,7 +166,7 @@ public:
 
 private:
   std::vector<Filter<T,2>> biquadFilters;
-  std::experimental::optional<Filter<T,1>> bilinearFilter;
+  nonstd::optional<Filter<T,1>> bilinearFilter;
 };
 
 
@@ -193,7 +193,7 @@ CascadedFilterParams<T> makeAnalogButterworthFilterParams(
     biquadFilters.push_back(
       { { 1 }, { T(1) + 2*sin(cu::pi*(n+0.5)/N)*scaledX + scaledX*scaledX } } );
 
-  std::experimental::optional<FilterParams<T,1>> bilinearFilter;
+  nonstd::optional<FilterParams<T,1>> bilinearFilter;
   if ( N%2 == 1 )
     bilinearFilter = FilterParams<T,1>{ {1}, { T(1)+scaledX } };
 
@@ -236,7 +236,7 @@ CascadedFilterParams<T> makeAnalogChebyshevType1FilterParams(
     const auto pole = i * std::cos( theta ) * cutoff;
     biquadFilters.push_back( makeBiquadFilterFromConjugatePoles( pole ) );
   }
-  std::experimental::optional<FilterParams<T,1>> bilinearFilter;
+  nonstd::optional<FilterParams<T,1>> bilinearFilter;
   if ( N%2 == 1 )
   {
     using placeholders::X;

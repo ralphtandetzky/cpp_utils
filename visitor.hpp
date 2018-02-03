@@ -7,7 +7,7 @@
 #include "meta_programming.hpp"
 
 #include <cassert>
-#include <experimental/optional>
+#include "optional.hpp"
 #include <memory>
 #include <type_traits>
 #include <vector>
@@ -103,7 +103,7 @@ namespace detail
   template <typename T>
   struct OptionalIfNotDefaultConstructibleImpl<T,false>
   {
-    using type = std::experimental::optional<T>;
+    using type = nonstd::optional<T>;
     template <typename U>
     static decltype(auto) moveOutValue( U && x ) { return std::move(x.value()); }
   };

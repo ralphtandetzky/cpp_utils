@@ -9,6 +9,7 @@
 
 #include "concurrent_queue.hpp"
 #include <future>
+#include <memory>
 #include <type_traits>
 
 namespace cu
@@ -37,11 +38,30 @@ public:
   template <typename F>
   auto push( F && f )
   {
+#if !defined(_MSC_VER)
     auto task = std::packaged_task<std::result_of_t<F(Args...)>(Args&&...)>(
           std::forward<F>(f) );
     auto result = task.get_future();
     tasks.emplace( std::move(task) );
     return result;
+#else
+    // This is a work-around, since MSVC is not standard compliant.
+    // MSVC does not allow move-only functors to be passed to a
+    // packaged_task constructor except the move constructor.
+    // Since packaged_task is move-only by itself, packaged_tasks with
+    // different template arguments cannot be passed into each others
+    // constructors.
+    auto fPtr = std::make_shared<F>( std::forward<F>(f) );
+    auto task = std::make_shared<std::packaged_task<std::result_of_t<F(Args...)>(Args&&...)>>(
+          [fPtr]( Args &&... args ){ return (*fPtr)( std::forward<Args>(args)... ); } );
+    auto result = task->get_future();
+    tasks.emplace(
+          [task]( Args &&... args )
+          {
+              (*task)( std::forward<Args>(args)... );
+          } );
+    return result;
+#endif
   }
 
   /// Pops the oldest element in the queue in a blocking way and executes it.

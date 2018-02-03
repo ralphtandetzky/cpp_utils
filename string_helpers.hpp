@@ -7,6 +7,7 @@
 #include <cassert>
 #include <istream>
 #include <string>
+#include <cctype>
 
 namespace cu
 {

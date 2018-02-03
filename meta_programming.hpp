@@ -10,11 +10,22 @@
 namespace cu
 {
 
-/// Returns the size of a tuple as compile-time constant.
-template <typename ...Ts>
-constexpr std::size_t get_tuple_size( const std::tuple<Ts...> & )
+namespace detail
 {
-  return sizeof...(Ts);
+  template <typename Tuple>
+  struct GetTupleSizeImpl;
+
+  template <typename ...Ts>
+  struct GetTupleSizeImpl<std::tuple<Ts...>>
+      : std::integral_constant<std::size_t, sizeof...(Ts)>
+  {};
+} // namespace detail
+
+/// Returns the size of a tuple as compile-time constant.
+template <typename Tuple>
+constexpr std::size_t get_tuple_size()
+{
+  return detail::GetTupleSizeImpl<Tuple>::value;
 }
 
 template <typename ...Ts>
@@ -81,8 +92,8 @@ void for_each( Tuple1 && tuple1,
                Tuple2 && tuple2,
                F && f )
 {
-  static_assert( get_tuple_size(tuple1) ==
-                 get_tuple_size(tuple2),
+  static_assert( get_tuple_size<Tuple1>() ==
+                 get_tuple_size<Tuple2>(),
                  "Tuples must have the same length." );
   detail::for_each_impl(
         std::forward<Tuple1>(tuple1),
@@ -137,7 +148,7 @@ namespace detail
   template <typename T, typename Tuple, std::size_t ...indexes>
   auto to_array_impl1( Tuple && tuple, std::index_sequence<indexes...> )
   {
-    return std::array<T,get_tuple_size(tuple)>{
+    return std::array<T,get_tuple_size<Tuple>()>{
       std::get<indexes>( std::forward<Tuple>(tuple))... };
   }
 

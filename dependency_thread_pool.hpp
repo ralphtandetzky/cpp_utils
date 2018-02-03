@@ -69,8 +69,17 @@ public:
       const cu::Slice<const Id> dependencyIds,
       F && f )
   {
+#if !defined(_MSC_VER)
     auto pt = std::packaged_task<std::result_of_t<F(Args...)>(Args&&...)>(
           std::forward<F>(f) );
+#else
+    // This is a work-around, since MSVC is not standard compliant.
+    // MSVC does not allow move-only functors to be passed to a
+    // packaged_task constructor except the move constructor.
+    auto fPtr = std::make_shared<F>( std::forward<F>(f) );
+    auto pt = std::packaged_task<std::result_of_t<F(Args...)>(Args&&...)>(
+          [fPtr]( Args &&... args ){ return (*fPtr)( std::forward<Args>(args)... ); } );
+#endif
     auto future = pt.get_future();
     cu::MoveFunction<void(Args&&...)> task = std::move(pt);
     const auto id = data( [&]( Data & data )
