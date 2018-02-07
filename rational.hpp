@@ -29,10 +29,10 @@ I gcd( I a, I b )
 /// @c std::int64_t.
 ///
 /// Note that @c Rational<I> does not keep numerator and denominator prime
-/// to each other, but only ensures that the denominator is always positive.
-/// This is for performance reasons. The user must ensure that the
-/// numerator and denominator stay within the bounds of the undelying integer
-/// type @c I. To get the reduced fraction, call @c normalized().
+/// to each other. This is for performance reasons.
+/// The user must ensure that the numerator and denominator stay within the
+/// bounds of the undelying integer type @c I.
+/// To get the reduced fraction, call @c normalized().
 template <typename I>
 class Rational
 {
@@ -47,7 +47,6 @@ public:
     : p( val )
   {}
 
-  /// Note th
   /// @pre The denominator must not be @c 0.
   constexpr Rational( I numerator, I denominator ) noexcept
     : p( numerator )
