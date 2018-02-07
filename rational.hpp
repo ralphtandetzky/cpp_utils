@@ -183,7 +183,7 @@ public:
 
   constexpr bool operator<( const Rational & other ) const noexcept
   {
-    return (q > 0) == (other.q > 0) ?
+    return (q >= 0) == (other.q >= 0) ?
           p * other.q < other.p * q :
           p * other.q > other.p * q;
   }
@@ -215,7 +215,7 @@ public:
 
   constexpr I rounded() const noexcept
   {
-    return (p >= 0) == (q > 0) ?
+    return (p >= 0) == (q >= 0) ?
         ( p + q/I(2) ) / q :
         ( p - q/I(2) ) / q;
   }
