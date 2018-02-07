@@ -147,8 +147,8 @@ public:
   /// @pre Other must not be @c 0.
   constexpr Rational & operator/=( const Rational & other ) noexcept
   {
-    p *= other.p;
-    q *= other.q;
+    p *= other.q;
+    q *= other.p;
     return *this;
   }
 
