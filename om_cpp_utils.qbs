@@ -8,7 +8,7 @@ StaticLibrary
     Export
     {
         Depends { name: "cpp" }
-        cpp.cxxLanguageVersion: "c++14"
+        cpp.cxxLanguageVersion: "c++17"
         cpp.defines: [
             "QT_DISABLE_DEPRECATED_BEFORE=0x050800",
             "BOOST_NO_AUTO_PTR",
