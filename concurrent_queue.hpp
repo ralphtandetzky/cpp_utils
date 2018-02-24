@@ -11,7 +11,7 @@
 
 #include <cassert>
 #include <condition_variable>
-#include "optional.hpp"
+#include <optional>
 #include <list>
 #include <type_traits>
 
@@ -92,11 +92,11 @@ public:
   /// Pops an item off the queue, blocking for at most @c maxWaitDuration.
   ///
   /// If the queue is empty for @c maxWaitDuration, then
-  /// @c nonstd::nullopt is returned.
+  /// @c std::nullopt is returned.
   /// Otherwise this function returns the popped element.
   template <typename Rep,
             typename Period>
-  nonstd::optional<T> tryPopFor(
+  std::optional<T> tryPopFor(
       const std::chrono::duration<Rep, Period> & maxWaitDuration )
   {
     static_assert( std::is_nothrow_move_constructible<T>::value,
@@ -112,26 +112,26 @@ public:
     });
 
     if ( l.empty() )
-      return nonstd::nullopt;
+      return std::nullopt;
 
     return std::move( l.front() );
   }
 
   /// Returns the front item in the queue, if it is non-empty.
   ///
-  /// Otherwise it returns @c nonstd::nullopt.
+  /// Otherwise it returns @c std::nullopt.
   ///
   /// @note This function calls the copy constructor of @c T under the lock,
   /// if the queue is not empty.
   /// Therefore, this function should only be used, if the copy constructor
   /// is cheap (to avoid contention) and does not invoke other locks
   /// (to avoid dead-lock).
-  nonstd::optional<T> tryGetFront() const
+  std::optional<T> tryGetFront() const
   {
-    return data( [&]( const Data & data ) -> nonstd::optional<T>
+    return data( [&]( const Data & data ) -> std::optional<T>
     {
       if ( data.items.empty() )
-        return nonstd::nullopt;
+        return std::nullopt;
       return data.items.front();
     } );
   }
