@@ -1,6 +1,3 @@
-// This project underlies the optiMEAS Source Code License which is
-// to be found at www.optimeas.de/source_code_license.
-
 #pragma once
 
 #include <array>
@@ -111,7 +108,19 @@ namespace detail
                                  F && f,
                                  std::index_sequence<indexes...> )
   {
-    return std::make_tuple( f( std::get<indexes>( std::forward<Tuple>(tuple) ) )... );
+    return std::make_tuple(
+        f( std::get<indexes>( std::forward<Tuple>(tuple) ) )... );
+  }
+
+  template <typename Tuple1, typename Tuple2, typename F, std::size_t ...indexes>
+  decltype(auto) transform_impl( Tuple1 && tuple1,
+                                 Tuple2 && tuple2,
+                                 F && f,
+                                 std::index_sequence<indexes...> )
+  {
+    return std::make_tuple(
+        f( std::get<indexes>( std::forward<Tuple1>(tuple1) ),
+           std::get<indexes>( std::forward<Tuple2>(tuple2) ) )... );
   }
 
 } // namespace detail
@@ -126,6 +135,24 @@ decltype(auto) transform( Tuple && tuple,
         std::forward<Tuple>(tuple),
         std::forward<F>(f),
         make_index_sequence(tuple) );
+}
+
+/// A binary functor is applied to the elements of two tuples and the returned values
+/// are returned in a tuple.
+template <typename Tuple1, typename Tuple2, typename F>
+decltype(auto) transform( Tuple1 && tuple1,
+                          Tuple2 && tuple2,
+                          F && f )
+{
+  #ifndef _MSC_VER 
+    static_assert( get_tuple_size(tuple1) == get_tuple_size(tuple2),
+                   "The tuple sized must coincide." );
+  #endif
+  return detail::transform_impl(
+        std::forward<Tuple1>(tuple1),
+        std::forward<Tuple2>(tuple2),
+        std::forward<F>(f),
+        make_index_sequence(tuple1) );
 }
 
 

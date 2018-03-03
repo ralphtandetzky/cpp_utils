@@ -29,6 +29,7 @@ StaticLibrary
 
     files: [
         "algorithm.hpp",
+        "array_arith.hpp",
         "c++17_features.hpp",
         "concurrent.hpp",
         "concurrent_queue.hpp",
@@ -43,10 +44,13 @@ StaticLibrary
         "geometry.hpp",
         "hexdump.hpp",
         "ignore.hpp",
+        "int_traits.hpp",
         "math_helpers.hpp",
         "memory_helpers.hpp",
         "meta_functor_binder.hpp",
         "meta_programming.hpp",
+        "minimize_differential_evolution.hpp",
+        "minimize_nelder_mead.hpp",
         "monitor.hpp",
         "pimpl_ptr.hpp",
         "polynomials.hpp",
@@ -65,6 +69,7 @@ StaticLibrary
         "task_queue_thread_pool.hpp",
         "units.hpp",
         "updater.hpp",
+        "vector_arith.hpp",
         "visitor.hpp",
     ]
 }

@@ -1,6 +1,3 @@
-// This project underlies the optiMEAS Source Code License which is
-// to be found at www.optimeas.de/source_code_license.
-
 #pragma once
 
 #include <cstddef>
@@ -106,14 +103,22 @@ struct Slice
       return ptr_[size_-1];
     }
 
-    Slice withoutHead() const noexcept
+    Slice withoutHead( std::size_t nElems = 1 ) const noexcept
     {
-      return { ptr_+1, size_-1 };
+      assert( nElems <= size_ );
+      return { ptr_+nElems, size_-nElems };
     }
 
-    Slice withoutTail() const noexcept
+    Slice withoutTail( std::size_t nElems = 1 ) const noexcept
     {
-      return { ptr_, size_-1 };
+      assert( nElems <= size_ );
+      return { ptr_, size_-nElems };
+    }
+
+    Slice truncated( std::size_t index ) const noexcept
+    {
+      assert( index <= size_ );
+      return { ptr_, index };
     }
 
 private:

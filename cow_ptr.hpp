@@ -1,6 +1,3 @@
-// This project underlies the optiMEAS Source Code License which is
-// to be found at www.optimeas.de/source_code_license.
-
 #pragma once
 
 #include <atomic>
@@ -10,41 +7,16 @@
 namespace cu
 {
 
+template <typename T> class cow_ptr;
+
+template <typename T>
 class DefaultCloner
 {
 public:
-  template <typename T>
-  std::unique_ptr<T> operator()( const T & item ) const
+  template <typename U>
+  cu::cow_ptr<T> operator()( const U & item ) const
   {
-    return doClone( item, Rank2{} );
-  }
-
-private:
-  struct Rank0 {};
-  struct Rank1 : Rank0 {};
-  struct Rank2 : Rank1 {};
-
-  // Prefer member clone.
-  template <typename T>
-  static auto doClone( const T & item, Rank2 )
-    -> decltype((void)item.clone(),std::unique_ptr<T>{})
-  {
-    return item.clone();
-  }
-
-  // Non-member clone is second choice.
-  template <typename T>
-  static auto doClone( const T & item, Rank1 )
-    -> decltype((void)clone(item),std::unique_ptr<T>{})
-  {
-    return clone( item );
-  }
-
-  // Last resort: Clone manually.
-  template <typename T>
-  static auto doClone( const T & item, Rank0 )
-  {
-    return std::make_unique<T>( item );
+    return cow_ptr<T>::template make<U>( item );
   }
 };
 
@@ -248,9 +220,9 @@ public:
   /// Construct from unique_ptr.
   template <typename U,
             typename D,
-            typename C = DefaultCloner>
+            typename C = DefaultCloner<T>>
   cow_ptr( std::unique_ptr<U,D> p,
-           C cloner = DefaultCloner() )
+           C cloner = DefaultCloner<T>() )
     : px( p.get() )
     , pn( RefCounterPtr( std::move(p), std::move(cloner) ) )
   {}
@@ -466,7 +438,7 @@ private:
 
     virtual cow_ptr<T> clone() const
     {
-      return cow_ptr<T>( cloner( *px ), cloner );
+      return cloner( *px );
     }
 
   private:

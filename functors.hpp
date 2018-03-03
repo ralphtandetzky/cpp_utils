@@ -1,8 +1,42 @@
-// This project underlies the optiMEAS Source Code License which is
-// to be found at www.optimeas.de/source_code_license.
-
 /** @file Defines miscellaneous general purpose functor types.
  * @author Ralph Tandetzky
+ *
+ * This header defines two generic functor classes which take a function
+ * signature as function argument:
+ *  - Lambda<Result(Args...)>
+ *  - MoveFunction<Result(Args...)> and MoveFunction<Result(Args...)const>
+ * These can be passed as function argument types just like
+ *  - std::function<Result(Args...)>
+ *  - F && where F is a template parameter.
+ *  - a C style function pointer Result(*)(Args...).
+ *
+ * Here's a little overview over the differences of these functor types:
+ *
+ * Kind of functor     Copyable?   Moveable?  Heap alloc?
+ *
+ * C-function ptr      yes         yes        no
+ * std::function       yes         yes        mostly
+ * cu::MoveFunction    no          yes        at most once
+ * cu::Lambda          no          no         no
+ * template            depends     depends    no
+ *
+ * Here's a general guideline of when to use which type:
+ *  - For maximum performance use the template variant. It allows inlining
+ *    and optimizations that follow from that.
+ *  - All other variants provide type erasure and hence more runtime
+ *    flexibility.
+ *  - If you need C compatibility, then C-function pointers are unavoidable.
+ *  - If that is not necessary, then the compiler should be able to compile
+ *    cu::Lambda with the same performance as the C function pointer.
+ *  - Since cu::Lambda is neither movable nor copyable it can only be used
+ *    locally. But for this purpose it is perfect: Flexible and super fast.
+ *  - cu::MoveFunction and std::function require a heap allocation, if
+ *    they are constructed from a stateful functor. This makes them a more
+ *    expensive at construction.
+ *  - cu::MoveFunction and std::function objects can can be stored in
+ *    containers or data fields of classes. This is when they should be used.
+ *  - If you require the functor to be copyable, then use std::function.
+ *    Otherwise use cu::MoveFunction.
  */
 
 #pragma once

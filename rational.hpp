@@ -29,10 +29,10 @@ I gcd( I a, I b )
 /// @c std::int64_t.
 ///
 /// Note that @c Rational<I> does not keep numerator and denominator prime
-/// to each other, but only ensures that the denominator is always positive.
-/// This is for performance reasons. The user must ensure that the
-/// numerator and denominator stay within the bounds of the undelying integer
-/// type @c I. To get the reduced fraction, call @c normalized().
+/// to each other. This is for performance reasons.
+/// The user must ensure that the numerator and denominator stay within the
+/// bounds of the undelying integer type @c I.
+/// To get the reduced fraction, call @c normalized().
 template <typename I>
 class Rational
 {
@@ -47,7 +47,6 @@ public:
     : p( val )
   {}
 
-  /// Note th
   /// @pre The denominator must not be @c 0.
   constexpr Rational( I numerator, I denominator ) noexcept
     : p( numerator )
@@ -147,8 +146,8 @@ public:
   /// @pre Other must not be @c 0.
   constexpr Rational & operator/=( const Rational & other ) noexcept
   {
-    p *= other.p;
-    q *= other.q;
+    p *= other.q;
+    q *= other.p;
     return *this;
   }
 
@@ -184,7 +183,7 @@ public:
 
   constexpr bool operator<( const Rational & other ) const noexcept
   {
-    return (q > 0) == (other.q > 0) ?
+    return (q >= 0) == (other.q >= 0) ?
           p * other.q < other.p * q :
           p * other.q > other.p * q;
   }
@@ -216,7 +215,7 @@ public:
 
   constexpr I rounded() const noexcept
   {
-    return (p >= 0) == (q > 0) ?
+    return (p >= 0) == (q >= 0) ?
         ( p + q/I(2) ) / q :
         ( p - q/I(2) ) / q;
   }
