@@ -145,8 +145,8 @@ decltype(auto) transform( Tuple1 && tuple1,
                           F && f )
 {
   #ifndef _MSC_VER 
-    static_assert( get_tuple_size(tuple1) == get_tuple_size(tuple2),
-                   "The tuple sized must coincide." );
+    static_assert( get_tuple_size<Tuple1>() == get_tuple_size<Tuple2>(),
+                   "The tuple sizes must coincide." );
   #endif
   return detail::transform_impl(
         std::forward<Tuple1>(tuple1),
