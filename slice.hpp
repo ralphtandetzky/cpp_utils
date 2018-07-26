@@ -121,6 +121,11 @@ struct Slice
       return { ptr_, index };
     }
 
+    Slice<const T> toConst() const noexcept
+    {
+        return { ptr_, size_ };
+    }
+
 private:
     T * ptr_ = nullptr;
     std::size_t size_ = 0;
