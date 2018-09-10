@@ -51,7 +51,7 @@ private:
 template <typename T, std::size_t N>
 class Rect
 {
-  using Point = Point<T,N>;
+  using Point = cu::Point<T,N>;
 public:
   Rect()
   {}
