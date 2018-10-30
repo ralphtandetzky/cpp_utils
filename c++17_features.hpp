@@ -14,8 +14,35 @@
 #include <type_traits>
 #include <utility>
 
+#ifdef __has_include                           // Check if __has_include is present
+#  if __has_include(<optional>)                // Check for a standard library
+#    include <optional>
+#  elif __has_include(<experimental/optional>) // Check for an experimental version
+#    include <experimental/optional>
+#  elif __has_include(<boost/optional.hpp>)    // Try with an external library
+#    include <boost/optional.hpp>
+#  else                                        // Not found at all
+#     error "Missing <optional>"
+#  endif
+#else
+#  error "Compiler does not support __has_include"
+#endif
+
 namespace cu
 {
+
+//using std::experimental::optional;
+// #include <optional>
+//
+// std::optional<T>
+
+#if __has_include(<optional>)                // Check for a standard library
+using std::optional;
+#elif __has_include(<experimental/optional>) // Check for an experimental version
+using std::experimental::optional;
+#elif __has_include(<boost/optional.hpp>)    // Try with an external library
+using boost::optional;
+#endif
 
 // #include <iterator>
 //
