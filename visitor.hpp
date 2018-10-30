@@ -1,11 +1,11 @@
 #pragma once
 
+#include "c++17_features.hpp"
 #include "cow_ptr.hpp"
 #include "functors.hpp"
 #include "meta_programming.hpp"
 
 #include <cassert>
-#include <optional>
 #include <memory>
 #include <type_traits>
 #include <vector>
@@ -101,7 +101,7 @@ namespace detail
   template <typename T>
   struct OptionalIfNotDefaultConstructibleImpl<T,false>
   {
-    using type = std::optional<T>;
+    using type = optional<T>;
     template <typename U>
     static decltype(auto) moveOutValue( U && x ) { return std::move(x.value()); }
   };

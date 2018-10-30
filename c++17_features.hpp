@@ -38,10 +38,13 @@ namespace cu
 
 #if __has_include(<optional>)                // Check for a standard library
 using std::optional;
+using std::nullopt;
 #elif __has_include(<experimental/optional>) // Check for an experimental version
 using std::experimental::optional;
+using std::experimental::nullopt;
 #elif __has_include(<boost/optional.hpp>)    // Try with an external library
 using boost::optional;
+using boost::nullopt;
 #endif
 
 // #include <iterator>

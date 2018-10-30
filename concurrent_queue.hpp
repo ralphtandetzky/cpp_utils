@@ -4,11 +4,11 @@
 
 #pragma once
 
+#include "c++17_features.hpp"
 #include "monitor.hpp"
 
 #include <cassert>
 #include <condition_variable>
-#include <optional>
 #include <list>
 #include <type_traits>
 
@@ -93,7 +93,7 @@ public:
   /// Otherwise this function returns the popped element.
   template <typename Rep,
             typename Period>
-  std::optional<T> tryPopFor(
+  optional<T> tryPopFor(
       const std::chrono::duration<Rep, Period> & maxWaitDuration )
   {
     static_assert( std::is_nothrow_move_constructible<T>::value,
@@ -109,7 +109,7 @@ public:
     });
 
     if ( l.empty() )
-      return std::nullopt;
+      return nullopt;
 
     return std::move( l.front() );
   }
@@ -123,12 +123,12 @@ public:
   /// Therefore, this function should only be used, if the copy constructor
   /// is cheap (to avoid contention) and does not invoke other locks
   /// (to avoid dead-lock).
-  std::optional<T> tryGetFront() const
+  optional<T> tryGetFront() const
   {
-    return data( [&]( const Data & data ) -> std::optional<T>
+    return data( [&]( const Data & data ) -> optional<T>
     {
       if ( data.items.empty() )
-        return std::nullopt;
+        return nullopt;
       return data.items.front();
     } );
   }
