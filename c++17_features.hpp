@@ -159,6 +159,10 @@ auto invoke(F&& f, ArgTypes&&... args)
 //
 // std::apply()
 
+#ifdef I
+#define CU_OLD_I_DEF I
+#undef I
+#endif
 namespace detail {
   template <typename F, typename Tuple, std::size_t... I>
   constexpr decltype(auto) apply_impl( F&& f, Tuple&& t, std::index_sequence<I...> )
@@ -166,6 +170,10 @@ namespace detail {
     return cu::invoke(std::forward<F>(f), std::get<I>(std::forward<Tuple>(t))...);
   }
 } // namespace detail
+#ifdef CU_OLD_I_DEF
+#define I CU_OLD_I_DEF
+#undef CU_OLD_I_DEF
+#endif
 
 template <typename F, typename Tuple>
 constexpr decltype(auto) apply(F&& f, Tuple&& t)
